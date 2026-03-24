@@ -61,12 +61,6 @@ export default function LoginPage() {
                 <div className="login-logo-section">
                     <div className="login-logo-icon">
                         <svg viewBox="0 0 48 48" fill="none">
-                            <defs>
-                                <linearGradient id="loginGrad" x1="0" y1="0" x2="48" y2="48">
-                                    <stop offset="0%" stopColor="#a78bfa" />
-                                    <stop offset="100%" stopColor="#3b82f6" />
-                                </linearGradient>
-                            </defs>
                             <rect width="48" height="48" rx="14" fill="url(#loginGrad)" opacity="0.15" />
                             <path d="M14 34V14h4l6 10 6-10h4v20h-4V21l-6 10-6-10v13h-4z" fill="url(#loginGrad)" />
                         </svg>
