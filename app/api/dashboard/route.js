@@ -20,7 +20,7 @@ export async function GET(request) {
         const recentOrders = db.prepare(`SELECT * FROM orders WHERE 1=1${dateFilter} ORDER BY created_at DESC LIMIT 6`).all(...dateParams);
         const statusCounts = db.prepare(`SELECT status, COUNT(*) as count FROM orders WHERE 1=1${dateFilter} GROUP BY status`).all(...dateParams);
 
-        // Transaction-based for chart
+        // Transaction-based for chart (DP is now stored directly in transactions table)
         let txFilter = '';
         const txParams = [];
         if (year) { txFilter += " AND strftime('%Y', date) = ?"; txParams.push(year); }

@@ -272,21 +272,33 @@ export default function FinancePage({ onAdd, onEdit }) {
                             {data.transactions.length === 0 ? (
                                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Belum ada transaksi</td></tr>
                             ) : (
-                                data.transactions.map((t, i) => (
+                            data.transactions.map((t, i) => (
                                     <tr key={t.id || i}>
                                         <td>{t.date}</td>
-                                        <td>{t.description}</td>
+                                        <td>
+                                            {t.description}
+                                            {t.type === 'dp' && <span className="status-badge baru" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>DP</span>}
+                                            {t.type === 'pelunasan' && <span className="status-badge selesai" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>Pelunasan</span>}
+                                        </td>
                                         <td><span className="status-badge proses">{t.category}</span></td>
                                         <td className="amount-in">{t.amount_in > 0 ? formatCurrency(t.amount_in) : '-'}</td>
                                         <td className="amount-out">{t.amount_out > 0 ? formatCurrency(t.amount_out) : '-'}</td>
                                         <td>
-                                            <button className="action-btn" onClick={() => onEdit(t)} title="Edit">
-                                                <span className="material-icons-round">edit</span>
-                                            </button>
+                                            {t.type !== 'pelunasan' && (
+                                                <button className="action-btn" onClick={() => onEdit(t)} title="Edit">
+                                                    <span className="material-icons-round">edit</span>
+                                                </button>
+                                            )}
                                             {' '}
-                                            <button className="action-btn" onClick={() => handleDelete(t)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
-                                                <span className="material-icons-round">delete</span>
-                                            </button>
+                                            {t.type !== 'dp' && t.type !== 'pelunasan' ? (
+                                                <button className="action-btn" onClick={() => handleDelete(t)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
+                                                    <span className="material-icons-round">delete</span>
+                                                </button>
+                                            ) : (
+                                                <button className="action-btn" title="Tidak bisa dihapus (terkait pesanan)" style={{ marginLeft: '0.25rem', opacity: 0.3, cursor: 'not-allowed' }} disabled>
+                                                    <span className="material-icons-round">lock</span>
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

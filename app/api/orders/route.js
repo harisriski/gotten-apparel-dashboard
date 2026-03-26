@@ -93,6 +93,21 @@ export async function POST(request) {
             body.shipping_date || ''
         );
 
+        // Auto-create DP transaction if DP > 0
+        const dpAmount = parseInt(body.dp) || 0;
+        if (dpAmount > 0) {
+            db.prepare(`
+                INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
+                VALUES (?, ?, ?, ?, 0, ?, 'dp')
+            `).run(
+                body.tanggal || new Date().toISOString().split('T')[0],
+                `DP Pesanan ${newId} - ${body.customer}`,
+                'Penjualan',
+                dpAmount,
+                newId
+            );
+        }
+
         const newOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(newId);
         return NextResponse.json(newOrder, { status: 201 });
     } catch (error) {

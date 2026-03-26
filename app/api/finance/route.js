@@ -13,11 +13,12 @@ export async function GET(request) {
         if (year) { dateFilter += " AND strftime('%Y', date) = ?"; dateParams.push(year); }
         if (month) { dateFilter += " AND strftime('%m', date) = ?"; dateParams.push(month); }
 
+        // DP is now stored directly in transactions table (type='dp'), no need to sum from orders separately
         const transactions = db.prepare(`SELECT * FROM transactions WHERE 1=1${dateFilter} ORDER BY date DESC`).all(...dateParams);
         const totalIn = db.prepare(`SELECT SUM(amount_in) as total FROM transactions WHERE 1=1${dateFilter}`).get(...dateParams).total || 0;
         const totalOut = db.prepare(`SELECT SUM(amount_out) as total FROM transactions WHERE 1=1${dateFilter}`).get(...dateParams).total || 0;
 
-        // Dynamic monthly cashflow from transactions table
+        // Dynamic monthly cashflow from transactions table (includes DP + pelunasan + manual)
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
         const cashflowRows = db.prepare(`
             SELECT strftime('%Y-%m', date) as ym,
@@ -75,8 +76,8 @@ export async function POST(request) {
         const body = await request.json();
 
         const stmt = db.prepare(`
-            INSERT INTO transactions (date, description, category, amount_in, amount_out)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO transactions (date, description, category, amount_in, amount_out, type)
+            VALUES (?, ?, ?, ?, ?, 'manual')
         `);
 
         const result = stmt.run(body.date, body.description, body.category, body.amount_in || 0, body.amount_out || 0);
@@ -96,6 +97,60 @@ export async function PUT(request) {
         const existing = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
 
+        // For DP transactions: handle pelunasan
+        if (existing.type === 'dp' && existing.order_id) {
+            // Update the DP transaction amount (editable)
+            db.prepare(`
+                UPDATE transactions SET amount_in=?, date=?, description=?
+                WHERE id=?
+            `).run(
+                body.amount_in ?? existing.amount_in,
+                body.date ?? existing.date,
+                body.description ?? existing.description,
+                id
+            );
+
+            // Also sync DP amount back to orders table
+            const newDpAmount = parseInt(body.amount_in ?? existing.amount_in) || 0;
+            db.prepare("UPDATE orders SET dp = ? WHERE id = ?").run(newDpAmount, existing.order_id);
+
+            // Handle pelunasan (settlement payment)
+            const pelunasanAmount = parseInt(body.pelunasan) || 0;
+            if (pelunasanAmount > 0) {
+                // Check existing pelunasan transaction for this order
+                const existingPelunasan = db.prepare("SELECT * FROM transactions WHERE order_id = ? AND type = 'pelunasan'").get(existing.order_id);
+
+                if (existingPelunasan) {
+                    // Update existing pelunasan
+                    db.prepare("UPDATE transactions SET amount_in = ?, date = ? WHERE id = ?").run(
+                        pelunasanAmount,
+                        body.date ?? existing.date,
+                        existingPelunasan.id
+                    );
+                } else {
+                    // Create new pelunasan transaction
+                    const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(existing.order_id);
+                    db.prepare(`
+                        INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
+                        VALUES (?, ?, ?, ?, 0, ?, 'pelunasan')
+                    `).run(
+                        body.date ?? existing.date,
+                        `Pelunasan Pesanan ${existing.order_id} - ${order?.customer || ''}`,
+                        'Penjualan',
+                        pelunasanAmount,
+                        existing.order_id
+                    );
+                }
+
+                // Update pelunasan amount on the order
+                db.prepare("UPDATE orders SET pelunasan = ? WHERE id = ?").run(pelunasanAmount, existing.order_id);
+            }
+
+            const updated = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+            return NextResponse.json(updated);
+        }
+
+        // For normal (manual) transactions: standard update
         const stmt = db.prepare(`
             UPDATE transactions SET date=?, description=?, category=?, amount_in=?, amount_out=?
             WHERE id=?
@@ -128,6 +183,14 @@ export async function DELETE(request) {
 
         const existing = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+
+        // Block deletion of order-linked transactions (DP and pelunasan)
+        if (existing.type === 'dp' || existing.type === 'pelunasan') {
+            return NextResponse.json(
+                { error: 'Transaksi DP/Pelunasan tidak dapat dihapus karena terkait dengan pesanan.' },
+                { status: 403 }
+            );
+        }
 
         db.prepare('DELETE FROM transactions WHERE id = ?').run(id);
         return NextResponse.json({ message: 'Transaction deleted', id });

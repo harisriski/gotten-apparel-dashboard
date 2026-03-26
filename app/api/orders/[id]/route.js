@@ -54,6 +54,35 @@ export async function PUT(request, { params }) {
         );
 
         const updated = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+
+        // Sync DP transaction
+        const newDp = parseInt(body.dp ?? existing.dp) || 0;
+        const existingDpTx = db.prepare("SELECT * FROM transactions WHERE order_id = ? AND type = 'dp'").get(id);
+
+        if (newDp > 0) {
+            if (existingDpTx) {
+                // Update existing DP transaction
+                db.prepare("UPDATE transactions SET amount_in = ?, description = ?, date = ? WHERE id = ?").run(
+                    newDp,
+                    `DP Pesanan ${id} - ${updated.customer}`,
+                    updated.tanggal || existingDpTx.date,
+                    existingDpTx.id
+                );
+            } else {
+                // Create new DP transaction
+                db.prepare(`
+                    INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
+                    VALUES (?, ?, ?, ?, 0, ?, 'dp')
+                `).run(
+                    updated.tanggal || new Date().toISOString().split('T')[0],
+                    `DP Pesanan ${id} - ${updated.customer}`,
+                    'Penjualan',
+                    newDp,
+                    id
+                );
+            }
+        }
+
         return NextResponse.json(updated);
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -66,6 +95,9 @@ export async function DELETE(request, { params }) {
         const { id } = await params;
         const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+
+        // Delete linked transactions (DP & Pelunasan) first
+        db.prepare('DELETE FROM transactions WHERE order_id = ?').run(id);
 
         db.prepare('DELETE FROM orders WHERE id = ?').run(id);
         return NextResponse.json({ message: 'Order deleted', id });
