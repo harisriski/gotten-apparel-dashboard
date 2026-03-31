@@ -13,7 +13,7 @@ const emptyForm = {
     email: '',
     phone: '',
     items: [{ ...emptyItem }],
-    potongan: 0, // Persen
+    potongan: 0, // Rp
     dp: 0,
     shipping_cost: 0,
     shipping_term: '',
@@ -61,7 +61,7 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-    const potonganAmount = Math.round(subtotal * ((parseFloat(data.potongan) || 0) / 100));
+    const potonganAmount = parseInt(data.potongan) || 0;
     const total = subtotal - potonganAmount + (parseInt(data.shipping_cost) || 0);
 
     // Update items function
@@ -261,10 +261,9 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                         </div>
 
                         <div className="detail-row" style={{ alignItems: 'center' }}>
-                            <span className="detail-label">Potongan (%)</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '50%' }}>
-                                <input className="form-input" type="number" min="0" max="100" step="any" value={data.potongan} onChange={e => setData({ ...data, potongan: e.target.value })} placeholder="0" style={{ textAlign: 'right' }} />
-                                <span>%</span>
+                            <span className="detail-label">Potongan (Rp)</span>
+                            <div style={{ width: '50%' }}>
+                                <input className="form-input" type="number" min="0" value={data.potongan} onChange={e => setData({ ...data, potongan: e.target.value })} placeholder="0" style={{ textAlign: 'right' }} />
                             </div>
                         </div>
                         {potonganAmount > 0 && (

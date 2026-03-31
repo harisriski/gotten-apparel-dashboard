@@ -35,8 +35,7 @@ export default function OrderDetailPage({ order, onBack, onEdit }) {
         price: (parseInt(item.qty) || 0) * (parseInt(item.unit_price) || 0)
     }));
     const subtotal = order.subtotal || computedItems.reduce((sum, item) => sum + item.price, 0);
-    const potonganPersen = parseFloat(order.potongan) || 0;
-    const potonganAmount = Math.round(subtotal * (potonganPersen / 100));
+    const potonganAmount = parseInt(order.potongan) || 0;
     const shippingCost = parseInt(order.shipping_cost) || 0;
     const total = order.price || (subtotal - potonganAmount + shippingCost);
     const dp = parseInt(order.dp) || 0;
@@ -141,10 +140,10 @@ export default function OrderDetailPage({ order, onBack, onEdit }) {
                             <span className="detail-value">{formatCurrency(subtotal)}</span>
                         </div>
 
-                        {potonganPersen > 0 && (
+                        {potonganAmount > 0 && (
                             <>
                                 <div className="detail-row">
-                                    <span className="detail-label">Potongan ({potonganPersen}%)</span>
+                                    <span className="detail-label">Potongan (Rp)</span>
                                     <span className="detail-value" style={{ color: 'var(--accent-red)' }}>-{formatCurrency(potonganAmount)}</span>
                                 </div>
                             </>
