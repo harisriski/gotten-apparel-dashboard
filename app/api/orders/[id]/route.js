@@ -71,12 +71,11 @@ export async function PUT(request, { params }) {
             } else {
                 // Create new DP transaction
                 db.prepare(`
-                    INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
-                    VALUES (?, ?, ?, ?, 0, ?, 'dp')
+                    INSERT INTO transactions (date, description, category_group, category, amount_in, amount_out, order_id, type)
+                    VALUES (?, ?, 'Pendapatan', 'Penjualan', ?, 0, ?, 'dp')
                 `).run(
                     updated.tanggal || new Date().toISOString().split('T')[0],
                     `DP Pesanan ${id} - ${updated.customer}`,
-                    'Penjualan',
                     newDp,
                     id
                 );

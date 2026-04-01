@@ -50,6 +50,59 @@ export async function GET(request) {
             };
         });
 
+        // ── Order Profit/Loss Summary ──────────────────────────────────────
+        const orderHppRows = db.prepare(`
+            SELECT DISTINCT t.order_id
+            FROM transactions t
+            WHERE t.order_id IS NOT NULL AND t.category_group = 'HPP' AND t.amount_out > 0
+        `).all();
+
+        let totalLabaBersih = 0;
+        let totalHppAll = 0;
+        let totalHargaPesanan = 0;
+        let lunasCount = 0;
+        const orderProfitData = [];
+
+        for (const row of orderHppRows) {
+            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(row.order_id);
+            if (!order) continue;
+
+            const orderTxs = db.prepare(`
+                SELECT * FROM transactions WHERE order_id = ? ORDER BY date ASC
+            `).all(row.order_id);
+
+            const totalHpp = orderTxs
+                .filter(t => t.category_group === 'HPP')
+                .reduce((sum, t) => sum + (t.amount_out || 0), 0);
+
+            const totalIncomeOrder = orderTxs
+                .reduce((sum, t) => sum + (t.amount_in || 0), 0);
+
+            const labaBersih = (order.price || 0) - totalHpp;
+            const margin = order.price > 0 ? (labaBersih / order.price) * 100 : 0;
+            const isLunas = totalIncomeOrder >= (order.price || 0);
+
+            totalLabaBersih += labaBersih;
+            totalHppAll += totalHpp;
+            totalHargaPesanan += (order.price || 0);
+            if (isLunas) lunasCount++;
+
+            orderProfitData.push({
+                order_id: order.id,
+                customer: order.customer,
+                product: order.product,
+                totalHarga: order.price || 0,
+                totalHpp,
+                labaBersih,
+                margin: Math.round(margin * 10) / 10,
+                isLunas,
+            });
+        }
+
+        const avgMargin = totalHargaPesanan > 0
+            ? Math.round((totalLabaBersih / totalHargaPesanan) * 1000) / 10
+            : 0;
+
         return NextResponse.json({
             kpi: {
                 totalOrders,
@@ -64,6 +117,15 @@ export async function GET(request) {
             recentOrders,
             statusCounts: statusCounts.reduce((acc, s) => { acc[s.status] = s.count; return acc; }, {}),
             monthlyRevenue,
+            orderProfitSummary: {
+                totalLabaBersih,
+                totalHpp: totalHppAll,
+                totalHargaPesanan,
+                avgMargin,
+                orderCount: orderHppRows.length,
+                lunasCount,
+            },
+            orderProfitData,
         });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

@@ -177,6 +177,10 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
     const totalIn = data.kpi.totalIn || finData.summary.totalIn;
     const profitMargin = totalIn > 0 ? ((profit / totalIn) * 100).toFixed(1) : 0;
 
+    // Order profit/loss data from dashboard API
+    const ops = data.orderProfitSummary || { totalLabaBersih: 0, totalHpp: 0, totalHargaPesanan: 0, avgMargin: 0, orderCount: 0, lunasCount: 0 };
+    const orderProfitList = data.orderProfitData || [];
+
     return (
         <div className="page-content">
             {/* Date Filter */}
@@ -251,6 +255,63 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                 </div>
             </div>
 
+            {/* Order Profit/Loss KPI Row */}
+            {ops.orderCount > 0 && (
+                <div className="kpi-grid" style={{ marginTop: '0' }}>
+                    <div className="kpi-card" style={{ '--accent': ops.totalLabaBersih >= 0 ? '#34d399' : '#f87171' }}>
+                        <div className="kpi-icon" style={{ background: ops.totalLabaBersih >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)' }}>
+                            <span className="material-icons-round" style={{ color: ops.totalLabaBersih >= 0 ? '#34d399' : '#f87171' }}>analytics</span>
+                        </div>
+                        <div className="kpi-content">
+                            <span className="kpi-label">Laba Bersih Pesanan</span>
+                            <span className="kpi-value"><AnimatedValue target={ops.totalLabaBersih} prefix="Rp " /></span>
+                            <span className={`kpi-change ${ops.totalLabaBersih >= 0 ? 'positive' : 'negative'}`}>
+                                <span className="material-icons-round">{ops.totalLabaBersih >= 0 ? 'trending_up' : 'trending_down'}</span>
+                                {ops.orderCount} pesanan dihitung
+                            </span>
+                        </div>
+                    </div>
+                    <div className="kpi-card" style={{ '--accent': '#f59e0b' }}>
+                        <div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)' }}>
+                            <span className="material-icons-round" style={{ color: '#f59e0b' }}>inventory_2</span>
+                        </div>
+                        <div className="kpi-content">
+                            <span className="kpi-label">Total HPP</span>
+                            <span className="kpi-value"><AnimatedValue target={ops.totalHpp} prefix="Rp " /></span>
+                            <span className="kpi-change negative">
+                                <span className="material-icons-round">shopping_cart</span>Harga Pokok Produksi
+                            </span>
+                        </div>
+                    </div>
+                    <div className="kpi-card" style={{ '--accent': '#3b82f6' }}>
+                        <div className="kpi-icon" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                            <span className="material-icons-round" style={{ color: '#3b82f6' }}>percent</span>
+                        </div>
+                        <div className="kpi-content">
+                            <span className="kpi-label">Rata-rata Margin</span>
+                            <span className="kpi-value">{ops.avgMargin}%</span>
+                            <span className={`kpi-change ${ops.avgMargin >= 30 ? 'positive' : 'negative'}`}>
+                                <span className="material-icons-round">{ops.avgMargin >= 30 ? 'thumb_up' : 'info'}</span>
+                                {ops.avgMargin >= 30 ? 'Margin sehat' : 'Perlu perhatian'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="kpi-card" style={{ '--accent': '#10b981' }}>
+                        <div className="kpi-icon" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                            <span className="material-icons-round" style={{ color: '#10b981' }}>check_circle</span>
+                        </div>
+                        <div className="kpi-content">
+                            <span className="kpi-label">Status Lunas</span>
+                            <span className="kpi-value">{ops.lunasCount}/{ops.orderCount}</span>
+                            <span className="kpi-change positive">
+                                <span className="material-icons-round">payments</span>
+                                {ops.orderCount > 0 ? Math.round((ops.lunasCount / ops.orderCount) * 100) : 0}% lunas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Charts Row */}
             <div className="charts-row">
                 <div className="chart-card">
@@ -276,6 +337,7 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                     )}
                 </div>
             </div>
+
 
             {/* Recent Orders & Transactions */}
             <div className="content-row">

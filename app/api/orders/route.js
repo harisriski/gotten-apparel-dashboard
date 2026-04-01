@@ -97,12 +97,11 @@ export async function POST(request) {
         const dpAmount = parseInt(body.dp) || 0;
         if (dpAmount > 0) {
             db.prepare(`
-                INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
-                VALUES (?, ?, ?, ?, 0, ?, 'dp')
+                INSERT INTO transactions (date, description, category_group, category, amount_in, amount_out, order_id, type)
+                VALUES (?, ?, 'Pendapatan', 'Penjualan', ?, 0, ?, 'dp')
             `).run(
                 body.tanggal || new Date().toISOString().split('T')[0],
                 `DP Pesanan ${newId} - ${body.customer}`,
-                'Penjualan',
                 dpAmount,
                 newId
             );

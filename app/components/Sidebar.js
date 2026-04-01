@@ -50,18 +50,11 @@ export default function Sidebar({ activePage, onPageChange, isOpen, onClose }) {
                 <div className="sidebar-header">
                     <div className="logo">
                         <div className="logo-icon">
-                            <svg viewBox="0 0 40 40" fill="none">
-                                <defs>
-                                    <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
-                                        <stop offset="0%" stopColor="#a78bfa" />
-                                        <stop offset="100%" stopColor="#3b82f6" />
-                                    </linearGradient>
-                                </defs>
-                                <rect width="40" height="40" rx="10" fill="url(#logoGrad)" opacity="0.15" />
-                                <path d="M12 14 L20 10 L28 14 L28 22 L24 26 L20 22 L16 26 L12 22 Z" stroke="url(#logoGrad)" strokeWidth="2" fill="none" />
-                                <path d="M20 16 L20 22" stroke="url(#logoGrad)" strokeWidth="2" />
-                                <circle cx="20" cy="28" r="2" fill="url(#logoGrad)" />
-                            </svg>
+                            <img
+                                src="/logo gotten fix.png"
+                                alt="Gotten Logo"
+                                style={{ borderRadius: '8px' }}
+                            />
                         </div>
                         <div className="logo-text">
                             <h1>GOTTEN INDONESIA</h1>

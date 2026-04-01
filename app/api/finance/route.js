@@ -1,6 +1,31 @@
 import getDb from '@/lib/db';
 import { NextResponse } from 'next/server';
 
+// ── Accounting logic helpers ─────────────────────────────────────────────────
+// Groups where Debit increases balance and Kredit decreases balance (normal debit balance)
+const DEBIT_NORMAL_GROUPS = ['Aset Lancar', 'HPP', 'Biaya'];
+// Groups where Kredit increases balance and Debit decreases balance (normal credit balance)
+const CREDIT_NORMAL_GROUPS = ['Kewajiban Lancar', "Owner's Equity", 'Pendapatan'];
+
+function classifyTransaction(tx) {
+    const group = tx.category_group || '';
+    const isDebitNormal = DEBIT_NORMAL_GROUPS.includes(group);
+    // For income/expense reporting:
+    // Income = Kredit on Pendapatan (revenue received)
+    // Expense = Debit on HPP, Biaya, or Kredit on Aset (cash going out)
+    if (tx.tx_type === 'debit') {
+        return { income: tx.amount_in, expense: tx.amount_out };
+    } else {
+        return { income: tx.amount_in, expense: tx.amount_out };
+    }
+}
+
+// Build full category path for display
+function buildCategoryPath(tx) {
+    const parts = [tx.category_group, tx.category, tx.category_sub].filter(Boolean);
+    return parts.join(' > ') || tx.category || '-';
+}
+
 export async function GET(request) {
     try {
         const db = getDb();
@@ -13,12 +38,24 @@ export async function GET(request) {
         if (year) { dateFilter += " AND strftime('%Y', date) = ?"; dateParams.push(year); }
         if (month) { dateFilter += " AND strftime('%m', date) = ?"; dateParams.push(month); }
 
-        // DP is now stored directly in transactions table (type='dp'), no need to sum from orders separately
-        const transactions = db.prepare(`SELECT * FROM transactions WHERE 1=1${dateFilter} ORDER BY date DESC`).all(...dateParams);
+        const transactions = db.prepare(`
+            SELECT t.*, o.customer AS order_customer, o.product AS order_product
+            FROM transactions t
+            LEFT JOIN orders o ON t.order_id = o.id
+            WHERE 1=1${dateFilter.replace(/date/g, 't.date')}
+            ORDER BY t.created_at DESC
+        `).all(...dateParams);
+
+        // Enrich transactions with full category path
+        const enrichedTransactions = transactions.map(t => ({
+            ...t,
+            category_path: buildCategoryPath(t),
+        }));
+
         const totalIn = db.prepare(`SELECT SUM(amount_in) as total FROM transactions WHERE 1=1${dateFilter}`).get(...dateParams).total || 0;
         const totalOut = db.prepare(`SELECT SUM(amount_out) as total FROM transactions WHERE 1=1${dateFilter}`).get(...dateParams).total || 0;
 
-        // Dynamic monthly cashflow from transactions table (includes DP + pelunasan + manual)
+        // Dynamic monthly cashflow from transactions table
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
         const cashflowRows = db.prepare(`
             SELECT strftime('%Y-%m', date) as ym,
@@ -38,32 +75,120 @@ export async function GET(request) {
             };
         });
 
-        // Dynamic expense breakdown from transactions table
+        // Dynamic expense breakdown by category_group > category
         const expenseRows = db.prepare(`
-            SELECT category, SUM(amount_out) as total
+            SELECT category_group, category, SUM(amount_out) as total
             FROM transactions
             WHERE amount_out > 0${dateFilter}
-            GROUP BY category
+            GROUP BY category_group, category
             ORDER BY total DESC
         `).all(...dateParams);
         const expenseTotal = expenseRows.reduce((sum, r) => sum + (r.total || 0), 0);
-        const expenseColors = {
-            'Bahan Baku': '#a78bfa', 'Gaji': '#3b82f6', 'Operasional': '#f59e0b',
-            'Pengiriman': '#34d399', 'Lain-lain': '#f472b6', 'Penjualan': '#60a5fa',
-        };
+        const expenseColors = [
+            '#a78bfa', '#3b82f6', '#f59e0b', '#34d399', '#f472b6',
+            '#60a5fa', '#fb923c', '#e879f9', '#94a3b8', '#fbbf24',
+            '#4ade80', '#f87171', '#38bdf8', '#c084fc',
+        ];
         const expenseBreakdown = expenseTotal > 0
-            ? expenseRows.map(r => ({
-                label: r.category,
+            ? expenseRows.map((r, i) => ({
+                label: r.category_group ? `${r.category_group} > ${r.category}` : r.category,
                 value: Math.round((r.total / expenseTotal) * 100),
-                color: expenseColors[r.category] || '#94a3b8',
+                color: expenseColors[i % expenseColors.length],
             }))
             : [];
 
+        // ── Order Profit/Loss Data ──────────────────────────────────────────
+        // Find all orders that have at least one HPP transaction linked
+        const orderHppRows = db.prepare(`
+            SELECT DISTINCT t.order_id
+            FROM transactions t
+            WHERE t.order_id IS NOT NULL AND t.category_group = 'HPP' AND t.amount_out > 0
+        `).all();
+
+        const orderProfitData = [];
+        for (const row of orderHppRows) {
+            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(row.order_id);
+            if (!order) continue;
+
+            // All transactions linked to this order
+            const orderTxs = db.prepare(`
+                SELECT * FROM transactions WHERE order_id = ? ORDER BY date ASC
+            `).all(row.order_id);
+
+            // Total HPP = sum of amount_out where category_group = 'HPP'
+            const totalHpp = orderTxs
+                .filter(t => t.category_group === 'HPP')
+                .reduce((sum, t) => sum + (t.amount_out || 0), 0);
+
+            // Total Income = sum of amount_in (DP + Pelunasan)
+            const totalIncome = orderTxs
+                .reduce((sum, t) => sum + (t.amount_in || 0), 0);
+
+            const labaBersih = (order.price || 0) - totalHpp;
+            const margin = order.price > 0 ? (labaBersih / order.price) * 100 : 0;
+            const isLunas = totalIncome >= (order.price || 0);
+
+            orderProfitData.push({
+                order_id: order.id,
+                customer: order.customer,
+                product: order.product,
+                totalHarga: order.price || 0,
+                totalHpp,
+                totalIncome,
+                labaBersih,
+                margin: Math.round(margin * 10) / 10,
+                isLunas,
+                transactions: orderTxs.map(t => ({
+                    id: t.id,
+                    date: t.date,
+                    description: t.description,
+                    category_group: t.category_group,
+                    category: t.category,
+                    type: t.type,
+                    tx_type: t.tx_type,
+                    amount_in: t.amount_in || 0,
+                amount_out: t.amount_out || 0,
+                })),
+                created_at: order.created_at || '',
+            });
+        }
+        
+        // Urutkan orderProfitData berdasarkan created_at descending
+        orderProfitData.sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+        // Computing the summary for order profit
+        let totalLabaBersih = 0;
+        let totalHppAll = 0;
+        let totalHargaPesanan = 0;
+        let lunasCount = 0;
+
+        for (const op of orderProfitData) {
+            totalLabaBersih += op.labaBersih;
+            totalHppAll += op.totalHpp;
+            totalHargaPesanan += op.totalHarga;
+            if (op.isLunas) lunasCount++;
+        }
+
+        const avgMargin = totalHargaPesanan > 0 
+            ? Math.round((totalLabaBersih / totalHargaPesanan) * 1000) / 10 
+            : 0;
+
+        const orderProfitSummary = {
+            totalLabaBersih,
+            totalHpp: totalHppAll,
+            totalHargaPesanan,
+            avgMargin,
+            orderCount: orderProfitData.length,
+            lunasCount,
+        };
+
         return NextResponse.json({
-            transactions,
+            transactions: enrichedTransactions,
             summary: { totalIn, totalOut, balance: totalIn - totalOut },
             monthlyCashflow,
             expenseBreakdown,
+            orderProfitData,
+            orderProfitSummary,
         });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -76,11 +201,22 @@ export async function POST(request) {
         const body = await request.json();
 
         const stmt = db.prepare(`
-            INSERT INTO transactions (date, description, category, amount_in, amount_out, type)
-            VALUES (?, ?, ?, ?, ?, 'manual')
+            INSERT INTO transactions (date, description, customer, category_group, category, category_sub, tx_type, amount_in, amount_out, order_id, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual')
         `);
 
-        const result = stmt.run(body.date, body.description, body.category, body.amount_in || 0, body.amount_out || 0);
+        const result = stmt.run(
+            body.date,
+            body.description,
+            body.customer || '',
+            body.category_group || '',
+            body.category || '',
+            body.category_sub || '',
+            body.tx_type || 'debit',
+            body.amount_in || 0,
+            body.amount_out || 0,
+            body.linked_order || null
+        );
         const newTx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(result.lastInsertRowid);
         return NextResponse.json(newTx, { status: 201 });
     } catch (error) {
@@ -101,12 +237,18 @@ export async function PUT(request) {
         if (existing.type === 'dp' && existing.order_id) {
             // Update the DP transaction amount (editable)
             db.prepare(`
-                UPDATE transactions SET amount_in=?, date=?, description=?
+                UPDATE transactions SET amount_in=?, date=?, description=?, customer=?,
+                    category_group=?, category=?, category_sub=?, tx_type=?
                 WHERE id=?
             `).run(
                 body.amount_in ?? existing.amount_in,
                 body.date ?? existing.date,
                 body.description ?? existing.description,
+                body.customer ?? existing.customer ?? '',
+                body.category_group ?? existing.category_group ?? '',
+                body.category ?? existing.category,
+                body.category_sub ?? existing.category_sub ?? '',
+                body.tx_type ?? existing.tx_type ?? 'debit',
                 id
             );
 
@@ -117,32 +259,31 @@ export async function PUT(request) {
             // Handle pelunasan (settlement payment)
             const pelunasanAmount = parseInt(body.pelunasan) || 0;
             if (pelunasanAmount > 0) {
-                // Check existing pelunasan transaction for this order
                 const existingPelunasan = db.prepare("SELECT * FROM transactions WHERE order_id = ? AND type = 'pelunasan'").get(existing.order_id);
 
                 if (existingPelunasan) {
-                    // Update existing pelunasan
                     db.prepare("UPDATE transactions SET amount_in = ?, date = ? WHERE id = ?").run(
                         pelunasanAmount,
                         body.date ?? existing.date,
                         existingPelunasan.id
                     );
                 } else {
-                    // Create new pelunasan transaction
                     const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(existing.order_id);
                     db.prepare(`
-                        INSERT INTO transactions (date, description, category, amount_in, amount_out, order_id, type)
-                        VALUES (?, ?, ?, ?, 0, ?, 'pelunasan')
+                        INSERT INTO transactions (date, description, category_group, category, category_sub, tx_type, amount_in, amount_out, order_id, type)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'pelunasan')
                     `).run(
                         body.date ?? existing.date,
                         `Pelunasan Pesanan ${existing.order_id} - ${order?.customer || ''}`,
+                        'Pendapatan',
                         'Penjualan',
+                        '',
+                        'debit',
                         pelunasanAmount,
                         existing.order_id
                     );
                 }
 
-                // Update pelunasan amount on the order
                 db.prepare("UPDATE orders SET pelunasan = ? WHERE id = ?").run(pelunasanAmount, existing.order_id);
             }
 
@@ -152,16 +293,21 @@ export async function PUT(request) {
 
         // For normal (manual) transactions: standard update
         const stmt = db.prepare(`
-            UPDATE transactions SET date=?, description=?, category=?, amount_in=?, amount_out=?
+            UPDATE transactions SET date=?, description=?, customer=?, category_group=?, category=?, category_sub=?, tx_type=?, amount_in=?, amount_out=?, order_id=?
             WHERE id=?
         `);
 
         stmt.run(
             body.date ?? existing.date,
             body.description ?? existing.description,
+            body.customer ?? existing.customer ?? '',
+            body.category_group ?? existing.category_group ?? '',
             body.category ?? existing.category,
+            body.category_sub ?? existing.category_sub ?? '',
+            body.tx_type ?? existing.tx_type ?? 'debit',
             body.amount_in ?? existing.amount_in,
             body.amount_out ?? existing.amount_out,
+            body.linked_order ?? existing.order_id ?? null,
             id
         );
 

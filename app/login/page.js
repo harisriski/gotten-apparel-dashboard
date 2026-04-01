@@ -60,10 +60,11 @@ export default function LoginPage() {
                 {/* Logo Section */}
                 <div className="login-logo-section">
                     <div className="login-logo-icon">
-                        <svg viewBox="0 0 48 48" fill="none">
-                            <rect width="48" height="48" rx="14" fill="url(#loginGrad)" opacity="0.15" />
-                            <path d="M14 34V14h4l6 10 6-10h4v20h-4V21l-6 10-6-10v13h-4z" fill="url(#loginGrad)" />
-                        </svg>
+                        <img
+                            src="/logo gotten fix.png"
+                            alt="Gotten Logo"
+                            style={{ width: '25%', height: '25%', objectFit: 'contain', borderRadius: '8px' }}
+                        />
                     </div>
                     <h1 className="login-brand">GOTTEN INDONESIA</h1>
                     <p className="login-brand-sub">APPAREL & CONVECTION</p>

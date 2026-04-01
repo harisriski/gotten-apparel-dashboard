@@ -39,7 +39,8 @@ export default function OrderDetailPage({ order, onBack, onEdit }) {
     const shippingCost = parseInt(order.shipping_cost) || 0;
     const total = order.price || (subtotal - potonganAmount + shippingCost);
     const dp = parseInt(order.dp) || 0;
-    const sisaTagihan = Math.max(0, total - dp);
+    const pelunasan = parseInt(order.pelunasan) || 0;
+    const sisaTagihan = Math.max(0, total - dp - pelunasan);
 
     // Section 1: Data Pelanggan
     const customerDetails = [
@@ -159,6 +160,13 @@ export default function OrderDetailPage({ order, onBack, onEdit }) {
                             <span className="detail-value">{formatCurrency(dp)}</span>
                         </div>
 
+                        {pelunasan > 0 && (
+                            <div className="detail-row">
+                                <span className="detail-label">Pelunasan</span>
+                                <span className="detail-value" style={{ color: 'var(--accent-green)' }}>{formatCurrency(pelunasan)}</span>
+                            </div>
+                        )}
+
                         <div className="detail-row" style={{ borderTop: '2px dashed var(--border-color)', marginTop: '0.5rem', paddingTop: '1rem' }}>
                             <span className="detail-label" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Total Bayar</span>
                             <span className="detail-value" style={{ fontSize: '1.4rem', color: 'var(--accent-green)', fontWeight: 700 }}>{formatCurrency(total)}</span>
@@ -166,8 +174,8 @@ export default function OrderDetailPage({ order, onBack, onEdit }) {
 
                         <div className="detail-row" style={{ borderBottom: 'none' }}>
                             <span className="detail-label">Sisa Tagihan</span>
-                            <span className="detail-value" style={{ color: sisaTagihan > 0 ? 'var(--accent-yellow)' : 'var(--text-muted)', fontWeight: 600 }}>
-                                {formatCurrency(sisaTagihan)}
+                            <span className="detail-value" style={{ color: sisaTagihan > 0 ? 'var(--accent-yellow)' : 'var(--accent-green)', fontWeight: 600 }}>
+                                {sisaTagihan > 0 ? formatCurrency(sisaTagihan) : '✅ LUNAS'}
                             </span>
                         </div>
                     </div>
