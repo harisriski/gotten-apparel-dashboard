@@ -378,7 +378,11 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                                 style={isOrderTx ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                             >
                                 <option value="">— Pilih Grup —</option>
-                                {groupOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                                {groupOptions.map(g => (
+                                    <option key={g} value={g} disabled={g !== 'HPP'}>
+                                        {g}
+                                    </option>
+                                ))}
                             </select>
                             {errors.category_group && <span className="form-error">{errors.category_group}</span>}
                         </div>
@@ -392,7 +396,11 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                                 style={(isOrderTx || !data.category_group) ? { opacity: 0.7, cursor: isOrderTx ? 'not-allowed' : undefined } : {}}
                             >
                                 <option value="">— Pilih Kategori —</option>
-                                {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                {categoryOptions.map(c => (
+                                    <option key={c} value={c} disabled={data.category_group !== 'HPP'}>
+                                        {c}
+                                    </option>
+                                ))}
                             </select>
                             {errors.category && <span className="form-error">{errors.category}</span>}
                         </div>
@@ -406,7 +414,11 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                                 style={(isOrderTx || subOptions.length === 0) ? { opacity: 0.7, cursor: isOrderTx ? 'not-allowed' : undefined } : {}}
                             >
                                 <option value="">{subOptions.length === 0 ? '— Tidak ada —' : '— Pilih Sub —'}</option>
-                                {subOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                                {subOptions.map(s => (
+                                    <option key={s} value={s} disabled={data.category_group !== 'HPP'}>
+                                        {s}
+                                    </option>
+                                ))}
                             </select>
                             {errors.category_sub && <span className="form-error">{errors.category_sub}</span>}
                         </div>
