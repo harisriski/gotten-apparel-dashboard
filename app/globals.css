@@ -2570,6 +2570,68 @@ body {
   overflow: hidden;
 }
 
+/* Back to Landing Button */
+.login-back-btn {
+  position: absolute;
+  top: 1.75rem;
+  left: 1.75rem;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.15rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s ease;
+}
+
+.login-back-btn:hover {
+  color: var(--color-primary-400, #10b981);
+  border-color: #10b981;
+  transform: translateX(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.login-back-btn .material-icons-round {
+  font-size: 1.15rem;
+  color: #10b981;
+  transition: transform 0.25s ease;
+}
+
+.login-back-btn:hover .material-icons-round {
+  transform: translateX(-2px);
+}
+
+.login-logo-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.login-logo-link:hover {
+  opacity: 0.88;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .login-back-btn {
+    top: 1rem;
+    left: 1rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+  }
+}
+
 /* Animated Background */
 .login-bg {
   position: absolute;

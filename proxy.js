@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 export function proxy(request) {
     const { pathname } = request.nextUrl;
 
-    // Allow login page, auth API routes, and static assets
+    // Allow public landing page, login page, auth API routes, and static assets
     if (
+        pathname === '/' ||
         pathname === '/login' ||
         pathname.startsWith('/api/auth/') ||
         pathname.startsWith('/_next/') ||
@@ -12,6 +13,7 @@ export function proxy(request) {
         pathname.endsWith('.ico') ||
         pathname.endsWith('.png') ||
         pathname.endsWith('.jpg') ||
+        pathname.endsWith('.webp') ||
         pathname.endsWith('.svg')
     ) {
         return NextResponse.next();

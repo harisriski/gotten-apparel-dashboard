@@ -1,0 +1,1639 @@
+/* ==========================================================================
+   Gotten Apparel — Landing Page Styling (Sportswear Dark Aesthetic)
+   ========================================================================== */
+
+.landingRoot {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #0b0e11;
+  color: #e5edf5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+  line-height: 1.6;
+}
+
+/* Base Headings & Display Fonts */
+.fontDisplay {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fontOswald {
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Containers */
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section {
+  padding: 6rem 0;
+  position: relative;
+}
+
+.sectionAlt {
+  background: #0f141a;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sectionHeader {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 3.5rem;
+}
+
+.badgeHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.sectionTitle span {
+  color: #10b981;
+}
+
+.sectionDesc {
+  color: #94a3b8;
+  font-size: 1.05rem;
+}
+
+/* ==========================================================================
+   Navbar
+   ========================================================================== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1.25rem 0;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.navbarScrolled {
+  background: rgba(11, 14, 17, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.navContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+}
+
+.navLogoImg {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+.navMenu {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navLink {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.navLink:hover {
+  color: #10b981;
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btnNavStaff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+}
+
+.btnNavStaff:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mobileMenuBtn {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Hero Section
+   ========================================================================== */
+.heroSection {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8rem 0 5rem;
+  overflow: hidden;
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.heroBgImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  filter: brightness(0.38) contrast(1.15);
+  transform: scale(1.04);
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 60% 40%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+              linear-gradient(to top, #0b0e11 0%, rgba(11, 14, 17, 0.6) 50%, rgba(11, 14, 17, 0.85) 100%);
+}
+
+.heroGridLines {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  max-width: 780px;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #10b981;
+  backdrop-filter: blur(8px);
+  margin-bottom: 1.5rem;
+}
+
+.heroBadgeDot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #10b981;
+  animation: pulse 2s infinite;
+}
+
+.heroHeadline {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6.2rem);
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.heroHeadlineGradient {
+  color: transparent;
+  background: linear-gradient(135deg, #ffffff 40%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.heroTagline {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #10b981;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.heroTagline::before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 2px;
+  background: #10b981;
+}
+
+.heroDescription {
+  font-size: 1.15rem;
+  color: #cbd5e1;
+  max-width: 620px;
+  margin-bottom: 2.25rem;
+  line-height: 1.7;
+}
+
+.heroDescription strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+}
+
+/* Primary CTA Button */
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.95rem 1.85rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+/* Secondary CTA Button */
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
+}
+
+.btnSecondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Stats Bar
+   ========================================================================== */
+.statsSection {
+  background: #0d1117;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2.5rem 0;
+  position: relative;
+  z-index: 10;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.statItem {
+  text-align: center;
+  position: relative;
+}
+
+.statItem:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -1rem;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.statValue {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  font-size: clamp(2.5rem, 4.5vw, 3.8rem);
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.statValueAccent {
+  color: #10b981;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+   Production Details / Quality Section
+   ========================================================================== */
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.detailCard {
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.detailCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.detailCardBig {
+  grid-column: span 6;
+}
+
+.detailCardSmall {
+  grid-column: span 3;
+}
+
+.detailCardImageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #090c0f;
+}
+
+.detailCardBig .detailCardImageWrapper {
+  aspect-ratio: 16 / 10;
+}
+
+.detailCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.detailCard:hover .detailCardImg {
+  transform: scale(1.06);
+}
+
+.detailCardTag {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(11, 14, 17, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #10b981;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+
+.detailCardBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.detailCardTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  color: #fff;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.detailCardText {
+  color: #94a3b8;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   4 Models Showcase & Pricing Section
+   ========================================================================== */
+.checkIcon {
+  color: #10b981;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.showcase {
+  margin-bottom: 2.5rem;
+}
+
+/* --- Tabs --- */
+.modelTabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.modelTab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 1rem 1.2rem;
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  color: #94a3b8;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.modelTab:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.modelTabName {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.1rem;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+}
+
+.modelTabPrice {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.modelTabFlag {
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #10b981;
+  color: #ffffff;
+}
+
+.modelTabFlagPremium {
+  background: #f59e0b;
+  color: #1a1003;
+}
+
+.modelTabActive {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.04) 100%);
+  border-color: #10b981;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+}
+
+.modelTabActive .modelTabName {
+  color: #ffffff;
+}
+
+.modelTabActive .modelTabPrice {
+  color: #10b981;
+}
+
+.modelTabActivePremium {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.16) 0%, rgba(245, 158, 11, 0.04) 100%);
+  border-color: #f59e0b;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+.modelTabActivePremium .modelTabPrice {
+  color: #f59e0b;
+}
+
+/* --- Panel --- */
+.showcasePanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  background: linear-gradient(145deg, #121820 0%, #0d1217 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.showcasePanelPremium {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Photo stage: light backdrop so the white-background product photos blend in */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3.5rem 1.5rem 1.25rem;
+  min-height: 600px;
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #eef1f4 55%, #dde3e9 100%);
+}
+
+.stageBadge {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: #0d1217;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.stageBadge :global(.material-icons-round) {
+  font-size: 0.95rem;
+  color: #10b981;
+}
+
+.showcasePanelPremium .stageBadge :global(.material-icons-round) {
+  color: #f59e0b;
+}
+
+.stageImageWrap {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 430px;
+}
+
+.stageImage {
+  object-fit: contain;
+  object-position: center bottom;
+  mix-blend-mode: multiply;
+  filter: brightness(1.04);
+  /* Fade left/right/top edges so the photo's off-white backdrop blends into the stage */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
+  mask-composite: intersect;
+  animation: stageFade 0.4s ease;
+}
+
+@keyframes stageFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.angleThumbs {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.angleThumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.4rem 0.4rem;
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.angleThumb:hover {
+  transform: translateY(-2px);
+}
+
+.angleThumbActive {
+  border-color: #10b981;
+}
+
+.showcasePanelPremium .angleThumbActive {
+  border-color: #f59e0b;
+}
+
+.angleThumbImg {
+  position: relative;
+  width: 56px;
+  height: 64px;
+  display: block;
+}
+
+.angleThumbImgEl {
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.angleThumbLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Info side */
+.info {
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 2.5rem 2.25rem;
+  animation: stageFade 0.4s ease;
+}
+
+.infoTier {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #10b981;
+  margin-bottom: 0.3rem;
+}
+
+.showcasePanelPremium .infoTier {
+  color: #f59e0b;
+}
+
+.infoName {
+  font-family: 'Oswald', sans-serif;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.infoTagline {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.infoPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 1.5rem 0;
+  padding: 1.1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.infoCurrency {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.showcasePanelPremium .infoCurrency {
+  color: #f59e0b;
+}
+
+.infoPriceNumber {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  font-size: 3.6rem;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.infoPriceUnit {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.infoPriceNote {
+  margin-left: auto;
+  align-self: center;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #64748b;
+  text-align: right;
+}
+
+.specGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem 1.5rem;
+}
+
+.specItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.specIcon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 1.1rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.showcasePanelPremium .specIcon {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.specLabel {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.15rem;
+}
+
+.specValue {
+  display: block;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #e2e8f0;
+}
+
+.infoActions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.infoMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.1rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.infoMeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.infoMeta :global(.material-icons-round) {
+  font-size: 0.95rem;
+  color: #10b981;
+}
+
+.btnPremium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: #120e0a !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+.btnPremium:hover {
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5) !important;
+}
+
+/* Extra Info Section */
+.pricingExtrasGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.bonusPromoBoxWide {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px dashed rgba(16, 185, 129, 0.35);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bonusPromoHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bonusPromoHeader h4 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.15rem;
+  color: #ffffff;
+  margin: 0 0 0.2rem;
+}
+
+.bonusPromoHeader p {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.pricingExtrasColumns {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 1.5rem;
+}
+
+.bonusPromoIcon {
+  font-size: 2.2rem;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.bonusPillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bonusPill {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+/* Terms / Sidebar Cards */
+.pricingSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pricingInfoCard {
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 1.75rem;
+}
+
+.infoCardTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.15rem;
+  color: #fff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.infoCardTitleIcon {
+  color: #10b981;
+  font-size: 1.35rem;
+}
+
+/* Size table */
+.sizeTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sizeTable tr:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sizeTable td {
+  padding: 0.65rem 0;
+  font-size: 0.92rem;
+}
+
+.sizeName {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.sizeFee {
+  text-align: right;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.sizeFeeNormal {
+  color: #94a3b8;
+}
+
+.sizeNote {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+}
+
+/* Quick summary pills */
+.quickTermsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.quickTermItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.quickTermItem span:last-child {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.quickTermItem strong {
+  color: #fff;
+}
+
+/* ==========================================================================
+   Order Steps
+   ========================================================================== */
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  position: relative;
+}
+
+.stepCard {
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.stepCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.stepNumber {
+  font-family: 'Bebas Neue', 'Oswald', sans-serif;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.12);
+  margin-bottom: 1rem;
+  transition: color 0.3s ease;
+}
+
+.stepCard:hover .stepNumber {
+  color: #10b981;
+}
+
+.stepTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.25rem;
+  color: #fff;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.stepText {
+  color: #94a3b8;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Portfolio Section
+   ========================================================================== */
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 240px;
+  gap: 1.25rem;
+}
+
+.portfolioItem {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #090c0f;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.portfolioItemTall {
+  grid-row: span 2;
+}
+
+.portfolioImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portfolioItem:hover .portfolioImg {
+  transform: scale(1.08);
+}
+
+.portfolioOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(11, 14, 17, 0.95) 0%, rgba(11, 14, 17, 0.2) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.portfolioItem:hover .portfolioOverlay {
+  opacity: 1;
+}
+
+.portfolioName {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.15rem;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.portfolioClientBadge {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+}
+
+/* Client Logo Marquee / Pill List */
+.clientsWrapper {
+  margin-top: 3.5rem;
+  text-align: center;
+}
+
+.clientsTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.95rem;
+  color: #64748b;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.clientPills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.clientPill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.clientPill:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #10b981;
+}
+
+/* ==========================================================================
+   Contact & Workshop Section
+   ========================================================================== */
+.contactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+
+.contactInfoCard {
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.contactBlockTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.45rem;
+  color: #fff;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.contactDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.contactRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.contactRowIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.contactRowLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.contactRowValue {
+  color: #e2e8f0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.contactRowValue a {
+  color: #e2e8f0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contactRowValue a:hover {
+  color: #10b981;
+}
+
+/* Instagram cards */
+.igBlock {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 1.5rem;
+}
+
+.igTitle {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.igList {
+  display: flex;
+  gap: 1rem;
+}
+
+.igCard {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.igCard:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.igCardHandle {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.igCardRole {
+  color: #10b981;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Map card */
+.contactMapCard {
+  background: #121820;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapIframe {
+  width: 100%;
+  flex: 1;
+  min-height: 380px;
+  border: 0;
+  filter: invert(90%) hue-rotate(180deg) contrast(1.1);
+}
+
+.mapCardFooter {
+  padding: 1.25rem 1.75rem;
+  background: #0f141a;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mapAddressShort {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.btnOpenMaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  transition: all 0.2s ease;
+}
+
+.btnOpenMaps:hover {
+  background: rgba(16, 185, 129, 0.2);
+  color: #fff;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.footer {
+  background: #07090b;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3.5rem 0 2rem;
+}
+
+.footerGrid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footerBrand {
+  max-width: 380px;
+}
+
+.footerLogo {
+  height: 36px;
+  width: auto;
+  margin-bottom: 0.85rem;
+}
+
+.footerTagline {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.footerLinks {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footerLinks a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.footerLinks a:hover {
+  color: #10b981;
+}
+
+.footerBottom {
+  padding-top: 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   Floating WhatsApp Button
+   ========================================================================== */
+.floatingWa {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #25d366;
+  color: #ffffff;
+  padding: 0.85rem 1.35rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4), 0 0 20px rgba(37, 211, 102, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  animation: floatWa 3s ease-in-out infinite;
+}
+
+.floatingWa:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 14px 38px rgba(37, 211, 102, 0.55);
+}
+
+.waIconSvg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes floatWa {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .showcasePanel {
+    grid-template-columns: 1fr;
+  }
+  .stage {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .detailCardBig {
+    grid-column: span 12;
+  }
+  .detailCardSmall {
+    grid-column: span 6;
+  }
+  .pricingExtrasColumns {
+    grid-template-columns: 1fr;
+  }
+  .stepsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .portfolioGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .contactGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .modelTabs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem 0.6rem;
+  }
+  .stage {
+    min-height: 460px;
+    padding-top: 3.25rem;
+  }
+  .stageImageWrap {
+    min-height: 340px;
+  }
+  .info {
+    padding: 1.75rem 1.4rem;
+  }
+  .infoName {
+    font-size: 1.7rem;
+  }
+  .infoPriceNumber {
+    font-size: 3rem;
+  }
+  .specGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .navMenu, .navActions {
+    display: none;
+  }
+  .mobileMenuBtn {
+    display: block;
+  }
+  .heroHeadline {
+    font-size: 3.2rem;
+  }
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .statItem:nth-child(2)::after {
+    display: none;
+  }
+  .detailCardSmall {
+    grid-column: span 12;
+  }
+  .priceFeatureList {
+    grid-template-columns: 1fr;
+  }
+  .stepsGrid {
+    grid-template-columns: 1fr;
+  }
+  .portfolioGrid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 200px;
+  }
+  .portfolioItemTall {
+    grid-row: span 1;
+  }
+  .footerGrid {
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+  }
+  .footerLinks {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .footerBottom {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  .floatingWa span {
+    display: none;
+  }
+  .floatingWa {
+    padding: 0.95rem;
+    border-radius: 50%;
+  }
+}

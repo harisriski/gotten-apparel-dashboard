@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -34,7 +35,7 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok) {
-                router.push('/');
+                router.push('/dashboard');
                 router.refresh();
             } else {
                 setError(data.error || 'Login gagal');
@@ -48,6 +49,12 @@ export default function LoginPage() {
 
     return (
         <div className="login-page">
+            {/* Tombol Kembali ke Landing Page */}
+            <Link href="/" className="login-back-btn" title="Kembali ke Landing Page Gotten">
+                <span className="material-icons-round">arrow_back</span>
+                <span>Kembali ke Beranda</span>
+            </Link>
+
             {/* Animated background */}
             <div className="login-bg">
                 <div className="login-bg-orb login-bg-orb-1"></div>
@@ -57,18 +64,20 @@ export default function LoginPage() {
             </div>
 
             <div className={`login-container ${mounted ? 'login-mounted' : ''}`}>
-                {/* Logo Section */}
-                <div className="login-logo-section">
-                    <div className="login-logo-icon">
-                        <img
-                            src="/logo gotten fix.png"
-                            alt="Gotten Logo"
-                            style={{ width: '25%', height: '25%', objectFit: 'contain', borderRadius: '8px' }}
-                        />
+                {/* Logo Section (Clickable to /) */}
+                <Link href="/" className="login-logo-link" title="Kembali ke Beranda">
+                    <div className="login-logo-section">
+                        <div className="login-logo-icon">
+                            <img
+                                src="/logo gotten fix.png"
+                                alt="Gotten Logo"
+                                style={{ width: '25%', height: '25%', objectFit: 'contain', borderRadius: '8px' }}
+                            />
+                        </div>
+                        <h1 className="login-brand">GOTTEN INDONESIA</h1>
+                        <p className="login-brand-sub">APPAREL & CONVECTION</p>
                     </div>
-                    <h1 className="login-brand">GOTTEN INDONESIA</h1>
-                    <p className="login-brand-sub">APPAREL & CONVECTION</p>
-                </div>
+                </Link>
 
                 {/* Login Card */}
                 <div className="login-card">
