@@ -51,15 +51,16 @@ export async function POST(request) {
 
         const lastOrder = db.prepare(`
             SELECT id FROM orders 
+            WHERE id LIKE 'GTN-%'
             ORDER BY CAST(SUBSTR(id, 5) AS INTEGER) DESC 
             LIMIT 1
         `).get();
-        let nextNum = 149;
+        let nextNum = 1;
         if (lastOrder) {
-            const num = parseInt(lastOrder.id.replace('ORD-', ''));
-            nextNum = num + 1;
+            const num = parseInt(lastOrder.id.replace('GTN-', ''));
+            nextNum = isNaN(num) ? 1 : num + 1;
         }
-        const newId = `ORD-${String(nextNum).padStart(4, '0')}`;
+        const newId = `GTN-${String(nextNum).padStart(4, '0')}`;
 
         const stmt = db.prepare(`
             INSERT INTO orders (
@@ -106,6 +107,23 @@ export async function POST(request) {
                 newId
             );
         }
+
+        // Auto-create Work Order Jersey for every new order
+        const countRow = db.prepare('SELECT COUNT(*) as count FROM work_orders').get();
+        const seq = String((countRow ? countRow.count : 0) + 1).padStart(4, '0');
+        const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
+        const woNumber = `WO-${dateStr}-${seq}`;
+
+        db.prepare(`
+            INSERT INTO work_orders (wo_number, order_id, customer, team_name, status, designs, notes)
+            VALUES (?, ?, ?, ?, 'pending', '[]', ?)
+        `).run(
+            woNumber,
+            newId,
+            body.customer || '',
+            body.company || body.product || '',
+            body.shipping_term ? `Ketentuan: ${body.shipping_term}` : ''
+        );
 
         const newOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(newId);
         return NextResponse.json(newOrder, { status: 201 });

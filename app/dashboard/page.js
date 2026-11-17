@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
@@ -8,13 +8,13 @@ import OrdersPage from '../components/OrdersPage';
 import FinancePage from '../components/FinancePage';
 import CustomersPage from '../components/CustomersPage';
 import InventoryPage from '../components/InventoryPage';
-import ProductionPage from '../components/ProductionPage';
+import WorkOrderPage from '../components/WorkOrderPage';
 import OrderFormPage from '../components/OrderFormPage';
 import OrderDetailPage from '../components/OrderDetailPage';
 import FinanceFormPage from '../components/FinanceFormPage';
 import CustomerFormPage from '../components/CustomerFormPage';
 import InventoryFormPage from '../components/InventoryFormPage';
-import ProductionFormPage from '../components/ProductionFormPage';
+import WorkOrderFormPage from '../components/WorkOrderFormPage';
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('overview');
@@ -144,9 +144,9 @@ export default function Dashboard() {
       case 'inventory-edit-stock':
         return <InventoryFormPage editItem={subPage.data} formType="stock" onSave={handleInventorySaved} onCancel={goBack} />;
       case 'production-add':
-        return <ProductionFormPage onSave={handleProductionSaved} onCancel={goBack} />;
+        return <WorkOrderFormPage onSave={handleProductionSaved} onCancel={goBack} />;
       case 'production-edit':
-        return <ProductionFormPage editItem={subPage.data} onSave={handleProductionSaved} onCancel={goBack} />;
+        return <WorkOrderFormPage editItem={subPage.data} onSave={handleProductionSaved} onCancel={goBack} />;
       default:
         return null;
     }
@@ -158,7 +158,7 @@ export default function Dashboard() {
     finance: <FinancePage onAdd={handleFinanceAdd} onEdit={handleFinanceEdit} />,
     customers: <CustomersPage onAdd={handleCustomerAdd} onEdit={handleCustomerEdit} onDetail={handleCustomerDetail} />,
     inventory: <InventoryPage onAddRaw={handleInventoryAddRaw} onEditRaw={handleInventoryEditRaw} onAddStock={handleInventoryAddStock} onEditStock={handleInventoryEditStock} />,
-    production: <ProductionPage onOrderClick={handleOrderDetail} onAdd={handleProductionAdd} onEdit={handleProductionEdit} />,
+    production: <WorkOrderPage onAdd={handleProductionAdd} onEdit={handleProductionEdit} />,
   };
 
   return (

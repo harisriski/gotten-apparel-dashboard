@@ -103,41 +103,67 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                         <thead>
                             <tr>
                                 <th>ID</th><th>Pelanggan</th><th>Produk</th><th>Qty</th>
-                                <th>Harga</th><th>Status</th><th>Deadline</th><th>Aksi</th>
+                                <th>Total Tagihan</th><th>Pembayaran</th><th>Status</th><th>Deadline</th><th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 [1, 2, 3, 4, 5].map(i => (
-                                    <tr key={i}><td colSpan={8}><div className="skeleton skeleton-row" /></td></tr>
+                                    <tr key={i}><td colSpan={9}><div className="skeleton skeleton-row" /></td></tr>
                                 ))
                             ) : orders.length === 0 ? (
-                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Tidak ada pesanan ditemukan</td></tr>
+                                <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Tidak ada pesanan ditemukan</td></tr>
                             ) : (
-                                orders.map(o => (
-                                    <tr key={o.id}>
-                                        <td><strong>{o.id}</strong></td>
-                                        <td>{o.customer}</td>
-                                        <td>{o.product}</td>
-                                        <td>{o.qty} pcs</td>
-                                        <td>{formatCurrency(o.price)}</td>
-                                        <td><span className={`status-badge ${o.status}`}>{getStatusLabel(o.status)}</span></td>
-                                        <td>{formatDate(o.deadline)}</td>
-                                        <td>
-                                            <button className="action-btn" onClick={() => onOrderClick && onOrderClick(o)} title="Detail">
-                                                <span className="material-icons-round">visibility</span>
-                                            </button>
-                                            {' '}
-                                            <button className="action-btn" onClick={() => onEdit(o)} title="Edit" style={{ marginLeft: '0.25rem' }}>
-                                                <span className="material-icons-round">edit</span>
-                                            </button>
-                                            {' '}
-                                            <button className="action-btn" onClick={() => handleDelete(o.id)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
-                                                <span className="material-icons-round">delete</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                                orders.map(o => {
+                                    const totalPaid = (parseInt(o.dp) || 0) + (parseInt(o.pelunasan) || 0);
+                                    const totalPrice = parseInt(o.price) || 0;
+                                    const sisa = Math.max(0, totalPrice - totalPaid);
+                                    const isLunas = totalPrice > 0 && totalPaid >= totalPrice;
+
+                                    return (
+                                        <tr key={o.id}>
+                                            <td><strong>{o.id}</strong></td>
+                                            <td>{o.customer}</td>
+                                            <td>{o.product}</td>
+                                            <td>{o.qty} pcs</td>
+                                            <td>
+                                                <strong style={{ fontSize: '0.9rem' }}>{formatCurrency(totalPrice)}</strong>
+                                            </td>
+                                            <td>
+                                                {isLunas ? (
+                                                    <span className="status-badge selesai" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                        <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>check_circle</span>
+                                                        Lunas
+                                                    </span>
+                                                ) : (
+                                                    <div>
+                                                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#eab308' }}>
+                                                            Sisa: {formatCurrency(sisa)}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                            Terbayar: {formatCurrency(totalPaid)}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td><span className={`status-badge ${o.status}`}>{getStatusLabel(o.status)}</span></td>
+                                            <td>{formatDate(o.deadline)}</td>
+                                            <td>
+                                                <button className="action-btn" onClick={() => onOrderClick && onOrderClick(o)} title="Detail">
+                                                    <span className="material-icons-round">visibility</span>
+                                                </button>
+                                                {' '}
+                                                <button className="action-btn" onClick={() => onEdit(o)} title="Edit" style={{ marginLeft: '0.25rem' }}>
+                                                    <span className="material-icons-round">edit</span>
+                                                </button>
+                                                {' '}
+                                                <button className="action-btn" onClick={() => handleDelete(o.id)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
+                                                    <span className="material-icons-round">delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

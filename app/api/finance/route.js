@@ -39,7 +39,8 @@ export async function GET(request) {
         if (month) { dateFilter += " AND strftime('%m', date) = ?"; dateParams.push(month); }
 
         const transactions = db.prepare(`
-            SELECT t.*, o.customer AS order_customer, o.product AS order_product
+            SELECT t.*, o.customer AS order_customer, o.product AS order_product,
+                   o.price AS order_price, o.dp AS order_dp, o.pelunasan AS order_pelunasan
             FROM transactions t
             LEFT JOIN orders o ON t.order_id = o.id
             WHERE 1=1${dateFilter.replace(/date/g, 't.date')}
@@ -233,17 +234,15 @@ export async function PUT(request) {
         const existing = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
 
-        // For DP transactions: handle pelunasan
+        // For DP transactions: handle pelunasan / cicilan lanjutan
         if (existing.type === 'dp' && existing.order_id) {
-            // Update the DP transaction amount (editable)
+            // Keep the original DP transaction locked (do not overwrite its amount with cicilan)
             db.prepare(`
-                UPDATE transactions SET amount_in=?, date=?, description=?, customer=?,
+                UPDATE transactions SET date=?, customer=?,
                     category_group=?, category=?, category_sub=?, tx_type=?
                 WHERE id=?
             `).run(
-                body.amount_in ?? existing.amount_in,
                 body.date ?? existing.date,
-                body.description ?? existing.description,
                 body.customer ?? existing.customer ?? '',
                 body.category_group ?? existing.category_group ?? '',
                 body.category ?? existing.category,
@@ -252,39 +251,35 @@ export async function PUT(request) {
                 id
             );
 
-            // Also sync DP amount back to orders table
-            const newDpAmount = parseInt(body.amount_in ?? existing.amount_in) || 0;
-            db.prepare("UPDATE orders SET dp = ? WHERE id = ?").run(newDpAmount, existing.order_id);
+            // Handle pembayaran baru (cicilan / pelunasan)
+            const newPayment = parseInt(body.additional_payment) || 0;
+            if (newPayment > 0) {
+                const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(existing.order_id);
+                const orderPrice = order ? (order.price || 0) : 0;
+                const orderDp = order ? (order.dp || 0) : 0;
+                const currentPelunasan = order ? (order.pelunasan || 0) : 0;
+                const updatedPelunasan = currentPelunasan + newPayment;
 
-            // Handle pelunasan (settlement payment)
-            const pelunasanAmount = parseInt(body.pelunasan) || 0;
-            if (pelunasanAmount > 0) {
-                const existingPelunasan = db.prepare("SELECT * FROM transactions WHERE order_id = ? AND type = 'pelunasan'").get(existing.order_id);
+                // Cek apakah dengan pembayaran ini total bayar (DP + updatedPelunasan) sudah >= orderPrice
+                const isFullyPaid = (orderDp + updatedPelunasan) >= orderPrice;
+                const txType = isFullyPaid ? 'pelunasan' : 'dp';
+                const txDesc = isFullyPaid
+                    ? `Pelunasan Pesanan ${existing.order_id} - ${order?.customer || ''}`
+                    : `Cicilan Pesanan ${existing.order_id} - ${order?.customer || ''}`;
 
-                if (existingPelunasan) {
-                    db.prepare("UPDATE transactions SET amount_in = ?, date = ? WHERE id = ?").run(
-                        pelunasanAmount,
-                        body.date ?? existing.date,
-                        existingPelunasan.id
-                    );
-                } else {
-                    const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(existing.order_id);
-                    db.prepare(`
-                        INSERT INTO transactions (date, description, category_group, category, category_sub, tx_type, amount_in, amount_out, order_id, type)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'pelunasan')
-                    `).run(
-                        body.date ?? existing.date,
-                        `Pelunasan Pesanan ${existing.order_id} - ${order?.customer || ''}`,
-                        'Pendapatan',
-                        'Penjualan',
-                        '',
-                        'debit',
-                        pelunasanAmount,
-                        existing.order_id
-                    );
-                }
+                db.prepare(`
+                    INSERT INTO transactions (date, description, customer, category_group, category, category_sub, tx_type, amount_in, amount_out, order_id, type)
+                    VALUES (?, ?, ?, 'Pendapatan', 'Penjualan', '', 'debit', ?, 0, ?, ?)
+                `).run(
+                    body.date ?? new Date().toISOString().split('T')[0],
+                    txDesc,
+                    order?.customer || '',
+                    newPayment,
+                    existing.order_id,
+                    txType
+                );
 
-                db.prepare("UPDATE orders SET pelunasan = ? WHERE id = ?").run(pelunasanAmount, existing.order_id);
+                db.prepare("UPDATE orders SET pelunasan = ? WHERE id = ?").run(updatedPelunasan, existing.order_id);
             }
 
             const updated = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
@@ -330,12 +325,34 @@ export async function DELETE(request) {
         const existing = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
 
-        // Block deletion of order-linked transactions (DP and pelunasan)
-        if (existing.type === 'dp' || existing.type === 'pelunasan') {
+        // Block deletion of order-linked DP transactions
+        if (existing.type === 'dp') {
             return NextResponse.json(
-                { error: 'Transaksi DP/Pelunasan tidak dapat dihapus karena terkait dengan pesanan.' },
+                { error: 'Transaksi DP tidak dapat dihapus manual.' },
                 { status: 403 }
             );
+        }
+
+        // Void / cancel pelunasan transaction (Skenario A: Reset total semua pembayaran lanjutan)
+        if (existing.type === 'pelunasan') {
+            if (existing.order_id) {
+                // Reset kolom pelunasan kembali ke 0 di tabel orders
+                db.prepare('UPDATE orders SET pelunasan = 0 WHERE id = ?').run(existing.order_id);
+
+                // Hapus semua transaksi cicilan lanjutan yang terkait dengan pesanan ini (kecuali DP awal asli)
+                db.prepare(`
+                    DELETE FROM transactions 
+                    WHERE order_id = ? 
+                      AND (type = 'pelunasan' OR (type = 'dp' AND description LIKE 'Cicilan%'))
+                `).run(existing.order_id);
+            } else {
+                db.prepare('DELETE FROM transactions WHERE id = ?').run(id);
+            }
+
+            return NextResponse.json({ 
+                message: 'Pelunasan dan seluruh cicilan lanjutan berhasil di-void (dibersihkan). Pesanan kembali ke status DP awal.',
+                id 
+            });
         }
 
         db.prepare('DELETE FROM transactions WHERE id = ?').run(id);

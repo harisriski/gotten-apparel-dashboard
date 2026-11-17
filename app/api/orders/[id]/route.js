@@ -98,6 +98,9 @@ export async function DELETE(request, { params }) {
         // Delete linked transactions (DP & Pelunasan) first
         db.prepare('DELETE FROM transactions WHERE order_id = ?').run(id);
 
+        // Delete linked work orders
+        db.prepare('DELETE FROM work_orders WHERE order_id = ?').run(id);
+
         db.prepare('DELETE FROM orders WHERE id = ?').run(id);
         return NextResponse.json({ message: 'Order deleted', id });
     } catch (error) {

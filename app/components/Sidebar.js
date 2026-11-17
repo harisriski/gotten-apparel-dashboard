@@ -19,7 +19,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, onClose }) {
         {
             label: 'Operasional',
             items: [
-                { page: 'production', icon: 'precision_manufacturing', label: 'Produksi' },
+                { page: 'production', icon: 'assignment', label: 'Work Order Jersey' },
                 { page: 'inventory', icon: 'inventory_2', label: 'Inventaris' },
             ]
         },

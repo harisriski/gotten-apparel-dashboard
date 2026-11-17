@@ -80,8 +80,8 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
         };
     });
 
-    // For DP edits: load existing pelunasan from the order
-    const [pelunasan, setPelunasan] = useState(0);
+    // For DP edits: load existing payments from the order
+    const [newPayment, setNewPayment] = useState('');
     const [orderInfo, setOrderInfo] = useState(null);
 
     // ── Active orders for dropdown (status: baru, proses) ──
@@ -95,11 +95,12 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                 .then(r => r.json())
                 .then(order => {
                     setOrderInfo(order);
-                    setPelunasan(order.pelunasan || 0);
+                    // Ensure the DP field always displays the order's actual initial DP, not any cicilan amount
+                    setData(prev => ({ ...prev, amount_in: order.dp || editTx.amount_in }));
                 })
                 .catch(err => console.error(err));
         }
-    }, [isDpEdit, editTx?.order_id]);
+    }, [isDpEdit, editTx?.order_id, editTx?.amount_in]);
 
     // Fetch active orders for dropdown
     useEffect(() => {
@@ -169,7 +170,8 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
         : [];
 
     function handleGroupChange(value) {
-        setData({ ...data, category_group: value, category: '', category_sub: '' });
+        const newTxType = (value === 'HPP' || value === 'Biaya') ? 'kredit' : data.txType;
+        setData({ ...data, category_group: value, category: '', category_sub: '', txType: newTxType });
         setErrors(prev => ({ ...prev, category_group: '', category: '', category_sub: '' }));
     }
 
@@ -222,10 +224,10 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                 linked_order: data.linked_order || '',
             };
 
-            // For DP edit: include pelunasan amount
+            // For DP edit: include additional payment
             if (isDpEdit) {
                 payload.amount_in = parseInt(data.amount_in) || 0;
-                payload.pelunasan = parseInt(pelunasan) || 0;
+                payload.additional_payment = parseInt(newPayment) || 0;
             }
 
             let res;
@@ -252,9 +254,13 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
 
     // Calculate sisa tagihan for DP edit
     const totalOrder = orderInfo?.price || 0;
-    const dpAmount = parseInt(data.amount_in) || 0;
-    const pelunasanAmount = parseInt(pelunasan) || 0;
-    const sisaTagihan = Math.max(0, totalOrder - dpAmount - pelunasanAmount);
+    const dpAmount = parseInt(orderInfo?.dp ?? data.amount_in) || 0;
+    const previousPelunasan = parseInt(orderInfo?.pelunasan) || 0;
+    const totalPaidBeforeNow = dpAmount + previousPelunasan;
+    const currentSisa = Math.max(0, totalOrder - totalPaidBeforeNow);
+
+    const inputPayment = parseInt(newPayment) || 0;
+    const remainingAfterThis = Math.max(0, currentSisa - inputPayment);
 
     return (
         <div className="page-content">
@@ -442,44 +448,82 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
 
                     {/* Row 4: Amount */}
                     <div className="form-group">
-                        <label className="form-label">{isDpEdit ? 'Nominal DP (Rp)' : `Jumlah ${data.txType === 'debit' ? 'Debit' : 'Kredit'} (Rp)`}</label>
+                        <label className="form-label">
+                            {isDpEdit ? 'Nominal DP Awal (Rp)' : `Jumlah ${data.txType === 'debit' ? 'Debit' : 'Kredit'} (Rp)`}
+                        </label>
                         <input
                             className="form-input"
                             type="number"
                             required
                             placeholder="0"
                             value={isDpEdit ? data.amount_in : (data.txType === 'debit' ? data.amount_in : data.amount_out)}
+                            readOnly={isDpEdit}
+                            style={isDpEdit ? { background: 'rgba(148, 163, 184, 0.1)', cursor: 'not-allowed', opacity: 0.85, fontWeight: 600 } : {}}
                             onChange={e => {
-                                if (isDpEdit) {
-                                    setData({ ...data, amount_in: e.target.value });
-                                } else if (data.txType === 'debit') {
+                                if (isDpEdit) return;
+                                if (data.txType === 'debit') {
                                     setData({ ...data, amount_in: e.target.value });
                                 } else {
                                     setData({ ...data, amount_out: e.target.value });
                                 }
                             }}
                         />
+                        {isDpEdit && (
+                            <span className="form-hint" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                                🔒 Nominal DP awal terkunci otomatis sesuai invoice pesanan. Untuk cicilan/pelunasan, isi pada bagian bawah.
+                            </span>
+                        )}
                         {errors.amount && <span className="form-error">{errors.amount}</span>}
                     </div>
 
-                    {/* Pelunasan Field (only for DP edit) */}
+                    {/* Input Pembayaran Lanjutan Hari Ini (only for DP edit) */}
                     {isDpEdit && (
                         <>
                             <div style={{ borderTop: '2px dashed var(--border-color)', margin: '1.5rem 0', paddingTop: '1.5rem' }}>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--accent-green)' }}>payments</span>
-                                    Pelunasan Pembayaran
+                                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-green)' }}>
+                                    <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>add_card</span>
+                                    Input Pembayaran Lanjutan (Cicilan / Pelunasan Hari Ini)
                                 </h4>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 1rem' }}>
+                                    Masukkan nominal yang dibayarkan customer hari ini. Jika melunasi sisa tagihan, transaksi otomatis menjadi <strong>Pelunasan</strong>. Jika masih bersisa, proyek tetap berada di tab <strong>DP / Cicilan</strong>.
+                                </p>
+                                
                                 <div className="form-group">
-                                    <label className="form-label">Nominal Pelunasan (Rp)</label>
+                                    <label className="form-label" style={{ fontWeight: 600 }}>
+                                        Nominal yang Dibayarkan Hari Ini (Rp)
+                                    </label>
                                     <input
                                         className="form-input"
                                         type="number"
                                         min="0"
-                                        placeholder="0"
-                                        value={pelunasan}
-                                        onChange={e => setPelunasan(e.target.value)}
+                                        max={currentSisa}
+                                        placeholder="Contoh: 10000000"
+                                        value={newPayment}
+                                        onChange={e => setNewPayment(e.target.value)}
+                                        style={{ fontSize: '1rem', fontWeight: 600, borderColor: inputPayment > 0 ? '#10b981' : undefined }}
                                     />
+                                    {currentSisa > 0 && inputPayment === 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewPayment(currentSisa)}
+                                            style={{
+                                                marginTop: '0.4rem',
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#3b82f6',
+                                                fontSize: '0.75rem',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                fontWeight: 600,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.2rem'
+                                            }}
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>done_all</span>
+                                            Bayar Langsung Lunas ({formatCurrency(currentSisa)})
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -487,26 +531,46 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                             <div style={{
                                 background: 'rgba(148, 163, 184, 0.06)',
                                 borderRadius: 'var(--radius-md)',
-                                padding: '1rem 1.25rem',
-                                marginTop: '0.5rem',
-                                fontSize: '0.85rem'
+                                padding: '1.25rem',
+                                marginTop: '1rem',
+                                fontSize: '0.875rem',
+                                border: '1px solid var(--border-color)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Total Order</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>Total Nilai Pesanan</span>
                                     <span style={{ fontWeight: 600 }}>{formatCurrency(totalOrder)}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Down Payment (DP)</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>DP Awal</span>
                                     <span style={{ fontWeight: 600, color: 'var(--accent-purple)' }}>{formatCurrency(dpAmount)}</span>
                                 </div>
+                                {previousPelunasan > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Cicilan Sebelumnya</span>
+                                        <span style={{ fontWeight: 600, color: '#3b82f6' }}>{formatCurrency(previousPelunasan)}</span>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Pelunasan</span>
-                                    <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>{formatCurrency(pelunasanAmount)}</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>Total Sudah Masuk (Sebelum Hari Ini)</span>
+                                    <span style={{ fontWeight: 600 }}>{formatCurrency(totalPaidBeforeNow)}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Sisa Tagihan</span>
-                                    <span style={{ fontWeight: 700, color: sisaTagihan > 0 ? 'var(--accent-yellow)' : 'var(--accent-green)', fontSize: '1rem' }}>
-                                        {sisaTagihan > 0 ? formatCurrency(sisaTagihan) : '✅ LUNAS'}
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--border-color)', paddingTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <span style={{ fontWeight: 600, color: '#f59e0b' }}>Sisa Tagihan Saat Ini</span>
+                                    <strong style={{ color: '#f59e0b', fontSize: '0.95rem' }}>{formatCurrency(currentSisa)}</strong>
+                                </div>
+
+                                {inputPayment > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#10b981' }}>
+                                        <span>+ Pembayaran Hari Ini</span>
+                                        <strong>+{formatCurrency(inputPayment)}</strong>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '0.65rem', marginTop: '0.25rem' }}>
+                                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Sisa Tagihan Setelah Ini</span>
+                                    <span style={{ fontWeight: 700, color: remainingAfterThis === 0 ? '#10b981' : '#eab308', fontSize: '1.05rem' }}>
+                                        {remainingAfterThis === 0 ? '✅ LUNAS' : formatCurrency(remainingAfterThis)}
                                     </span>
                                 </div>
                             </div>

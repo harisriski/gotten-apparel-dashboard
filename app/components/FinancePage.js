@@ -39,7 +39,7 @@ const ITEMS_PER_PAGE = 15;
 const TYPE_FILTERS = [
     { value: '', label: 'Semua', icon: 'list' },
     { value: 'manual', label: 'Manual', icon: 'edit_note' },
-    { value: 'dp', label: 'DP', icon: 'payments' },
+    { value: 'dp', label: 'DP / Cicilan', icon: 'payments' },
     { value: 'pelunasan', label: 'Pelunasan', icon: 'check_circle' },
     { value: 'profit', label: 'Laba/Rugi Pesanan', icon: 'analytics' },
 ];
@@ -188,8 +188,19 @@ export default function FinancePage({ onAdd, onEdit }) {
     const filteredTransactions = data.transactions.filter(t => {
         // Skip filtering for profit tab (handled separately)
         if (typeFilter === 'profit') return false;
-        // Type filter
-        if (typeFilter && (t.type || 'manual') !== typeFilter) return false;
+
+        // If tab is DP: only show DP transactions whose orders are NOT fully paid yet
+        if (typeFilter === 'dp') {
+            if (t.type !== 'dp') return false;
+            const orderPrice = t.order_price || 0;
+            const orderPaid = (t.order_dp || 0) + (t.order_pelunasan || 0);
+            if (orderPrice > 0 && orderPaid >= orderPrice) {
+                return false; // Already fully paid, hide from DP tab
+            }
+        } else if (typeFilter && (t.type || 'manual') !== typeFilter) {
+            return false;
+        }
+
         // Search filter
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
@@ -215,10 +226,17 @@ export default function FinancePage({ onAdd, onEdit }) {
     );
 
     // Count per type for badges
+    const pendingDpCount = data.transactions.filter(t => {
+        if (t.type !== 'dp') return false;
+        const orderPrice = t.order_price || 0;
+        const orderPaid = (t.order_dp || 0) + (t.order_pelunasan || 0);
+        return !(orderPrice > 0 && orderPaid >= orderPrice);
+    }).length;
+
     const typeCounts = {
         '': data.transactions.length,
         manual: data.transactions.filter(t => (t.type || 'manual') === 'manual').length,
-        dp: data.transactions.filter(t => t.type === 'dp').length,
+        dp: pendingDpCount,
         pelunasan: data.transactions.filter(t => t.type === 'pelunasan').length,
         profit: (data.orderProfitData || []).length,
     };
@@ -634,13 +652,34 @@ export default function FinancePage({ onAdd, onEdit }) {
                                                 <td>
                                                     <div>
                                                         {t.description}
-                                                        {t.type === 'dp' && <span className="status-badge baru" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>DP</span>}
-                                                        {t.type === 'pelunasan' && <span className="status-badge selesai" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>Pelunasan</span>}
+                                                        {t.type === 'dp' && <span className="status-badge baru" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>DP / Termin</span>}
+                                                        {t.type === 'pelunasan' && <span className="status-badge selesai" style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>Pelunasan (Lunas)</span>}
                                                     </div>
                                                     {t.customer && (
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                             <span className="material-icons-round" style={{ fontSize: '0.9rem' }}>person</span>
                                                             {t.customer}
+                                                        </div>
+                                                    )}
+                                                    {t.order_price > 0 && t.type === 'dp' && (
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            marginTop: '0.3rem',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.4rem',
+                                                            background: 'rgba(234, 179, 8, 0.1)',
+                                                            padding: '0.2rem 0.5rem',
+                                                            borderRadius: '4px',
+                                                            border: '1px solid rgba(234, 179, 8, 0.25)'
+                                                        }}>
+                                                            <span style={{ color: 'var(--text-muted)' }}>Tagihan: {formatCurrency(t.order_price)}</span>
+                                                            <span style={{ color: '#94a3b8' }}>•</span>
+                                                            <span style={{ color: 'var(--text-muted)' }}>Terbayar: {formatCurrency((t.order_dp || 0) + (t.order_pelunasan || 0))}</span>
+                                                            <span style={{ color: '#94a3b8' }}>•</span>
+                                                            <strong style={{ color: '#eab308' }}>
+                                                                Sisa: {formatCurrency(Math.max(0, t.order_price - ((t.order_dp || 0) + (t.order_pelunasan || 0))))}
+                                                            </strong>
                                                         </div>
                                                     )}
                                                 </td>
@@ -653,21 +692,75 @@ export default function FinancePage({ onAdd, onEdit }) {
                                                 <td className="amount-in">{t.amount_in > 0 ? formatCurrency(t.amount_in) : '-'}</td>
                                                 <td className="amount-out">{t.amount_out > 0 ? formatCurrency(t.amount_out) : '-'}</td>
                                                 <td>
-                                                    {t.type !== 'pelunasan' && (
-                                                        <button className="action-btn" onClick={() => onEdit(t)} title="Edit">
-                                                            <span className="material-icons-round">edit</span>
-                                                        </button>
-                                                    )}
-                                                    {' '}
-                                                    {t.type !== 'dp' && t.type !== 'pelunasan' ? (
-                                                        <button className="action-btn" onClick={() => handleDelete(t)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
-                                                            <span className="material-icons-round">delete</span>
-                                                        </button>
-                                                    ) : (
-                                                        <button className="action-btn" title="Tidak bisa dihapus (terkait pesanan)" style={{ marginLeft: '0.25rem', opacity: 0.3, cursor: 'not-allowed' }} disabled>
-                                                            <span className="material-icons-round">lock</span>
-                                                        </button>
-                                                    )}
+                                                    {(() => {
+                                                        const isOrderLunas = t.order_price > 0 && ((t.order_dp || 0) + (t.order_pelunasan || 0)) >= t.order_price;
+                                                        
+                                                        // If it's a DP transaction and the order is already LUNAS -> Read-Only lock
+                                                        if (t.type === 'dp' && isOrderLunas) {
+                                                            return (
+                                                                <span
+                                                                    className="status-badge selesai"
+                                                                    style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                                                                    title="Pesanan sudah lunas. Data terkunci."
+                                                                >
+                                                                    <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>lock</span>
+                                                                    Lunas
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        // If it's a secondary installment (Cicilan), lock from editing so only the primary DP handles further payments
+                                                        if (t.type === 'dp' && t.description && t.description.startsWith('Cicilan')) {
+                                                            return (
+                                                                <span
+                                                                    className="status-badge baru"
+                                                                    style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', opacity: 0.85 }}
+                                                                    title="Catatan cicilan riwayat pembayaran. Pembayaran lanjutan dilakukan melalui baris DP pesanan ini."
+                                                                >
+                                                                    <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>check</span>
+                                                                    Tercatat
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        // If it's a Pelunasan transaction -> can be Voided / Cancelled (Skenario A)
+                                                        if (t.type === 'pelunasan') {
+                                                            return (
+                                                                <button
+                                                                    className="action-btn"
+                                                                    onClick={() => {
+                                                                        if (confirm(`Batalkan / Void pelunasan ${t.description}?\n\nSemua cicilan lanjutan terkait pesanan ini akan dibersihkan, dan pesanan akan kembali bersih ke status DP Awal.`)) {
+                                                                            handleDelete(t);
+                                                                        }
+                                                                    }}
+                                                                    title="Batalkan (Void) Pelunasan & Reset ke DP Awal"
+                                                                    style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+                                                                >
+                                                                    <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>undo</span>
+                                                                    Void
+                                                                </button>
+                                                            );
+                                                        }
+
+                                                        // Default action buttons for manual transactions or pending DP
+                                                        return (
+                                                            <>
+                                                                <button className="action-btn" onClick={() => onEdit(t)} title={t.type === 'dp' ? 'Input Pelunasan / Edit DP' : 'Edit'}>
+                                                                    <span className="material-icons-round">edit</span>
+                                                                </button>
+                                                                {' '}
+                                                                {t.type !== 'dp' ? (
+                                                                    <button className="action-btn" onClick={() => handleDelete(t)} title="Hapus" style={{ marginLeft: '0.25rem' }}>
+                                                                        <span className="material-icons-round">delete</span>
+                                                                    </button>
+                                                                ) : (
+                                                                    <button className="action-btn" title="Transaksi DP terkait pesanan aktif" style={{ marginLeft: '0.25rem', opacity: 0.3, cursor: 'not-allowed' }} disabled>
+                                                                        <span className="material-icons-round">lock</span>
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </td>
                                             </tr>
                                         ))
