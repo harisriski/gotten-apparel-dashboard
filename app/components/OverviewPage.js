@@ -49,12 +49,34 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
     const [data, setData] = useState(null);
     const [finData, setFinData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [availableYears, setAvailableYears] = useState([]);
     const [filterYear, setFilterYear] = useState('');
     const [filterMonth, setFilterMonth] = useState('');
     const revenueChartRef = useRef(null);
     const cashflowChartRef = useRef(null);
     const revenueInstance = useRef(null);
     const cashflowInstance = useRef(null);
+
+    // Ambil daftar tahun unik secara dinamis dari database
+    useEffect(() => {
+        fetch('/api/orders/years')
+            .then(r => r.json())
+            .then(years => {
+                if (Array.isArray(years) && years.length > 0) {
+                    setAvailableYears(years);
+                } else {
+                    setAvailableYears([String(new Date().getFullYear())]);
+                }
+            })
+            .catch(() => {
+                setAvailableYears([String(new Date().getFullYear())]);
+            });
+    }, []);
+
+    function handleResetFilters() {
+        setFilterYear('');
+        setFilterMonth('');
+    }
 
     function fetchData() {
         setLoading(true);
@@ -183,23 +205,109 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
 
     return (
         <div className="page-content">
-            {/* Date Filter */}
-            <div className="page-filters">
-                <div className="page-filters-left">
-                    <div className="date-filter">
-                        <div className="date-filter-item">
-                            <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>calendar_month</span>
-                            <select className="date-filter-select" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
-                                {yearOptions.map(y => <option key={y.value} value={y.value}>{y.label}</option>)}
-                            </select>
-                        </div>
-                        <div className="date-filter-item">
-                            <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>date_range</span>
-                            <select className="date-filter-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-                                {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                            </select>
-                        </div>
+            {/* Filter Bar (Konsisten 38px) */}
+            <div style={{
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-color)',
+                padding: '0.85rem 1rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.65rem'
+                }}>
+                    {/* Filter Tahun */}
+                    <div style={{ minWidth: '140px' }}>
+                        <select
+                            value={filterYear}
+                            onChange={e => setFilterYear(e.target.value)}
+                            className="form-input"
+                            style={{
+                                height: '38px',
+                                padding: '0 0.75rem',
+                                fontSize: '0.85rem',
+                                width: '100%',
+                                boxSizing: 'border-box',
+                                background: 'var(--bg-card)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="">Semua Tahun</option>
+                            {availableYears.map(y => (
+                                <option key={y} value={y}>Tahun {y}</option>
+                            ))}
+                        </select>
                     </div>
+
+                    {/* Filter Bulan */}
+                    <div style={{ minWidth: '150px' }}>
+                        <select
+                            value={filterMonth}
+                            onChange={e => setFilterMonth(e.target.value)}
+                            className="form-input"
+                            style={{
+                                height: '38px',
+                                padding: '0 0.75rem',
+                                fontSize: '0.85rem',
+                                width: '100%',
+                                boxSizing: 'border-box',
+                                background: 'var(--bg-card)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {monthOptions.map(m => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Reset Button */}
+                    {(filterYear || filterMonth) && (
+                        <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="btn-secondary"
+                            style={{
+                                height: '38px',
+                                padding: '0 0.85rem',
+                                fontSize: '0.82rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                borderRadius: '8px',
+                                whiteSpace: 'nowrap'
+                            }}
+                            title="Reset filter ke Semua Waktu"
+                        >
+                            <span className="material-icons-round" style={{ fontSize: '1rem' }}>restart_alt</span>
+                            Reset Filter
+                        </button>
+                    )}
+                </div>
+
+                {/* Indikator Periode Aktif */}
+                <div style={{
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    color: 'var(--accent-primary)',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                }}>
+                    <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>calendar_today</span>
+                    Periode: {filterMonth ? monthOptions.find(m => m.value === filterMonth)?.label : 'Semua Bulan'} {filterYear ? filterYear : 'Semua Tahun'}
                 </div>
             </div>
 

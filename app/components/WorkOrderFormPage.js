@@ -34,15 +34,22 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
         estimasi_hari: initialDt.estimasi_hari || '',
     });
 
-    // Hitung otomatis Tanggal Keluar = Tanggal Masuk + Estimasi Hari
+    // Validasi & Hitung otomatis Tanggal Keluar = Tanggal Masuk + Estimasi Hari (Max 1000 hari)
+    const estimasiDays = (dataTransaksi.estimasi_hari !== '' && dataTransaksi.estimasi_hari !== undefined)
+        ? parseInt(dataTransaksi.estimasi_hari, 10)
+        : null;
+    const isEstimasiInvalid = estimasiDays !== null && (!Number.isInteger(estimasiDays) || estimasiDays < 0 || estimasiDays > 1000);
+
     const computedTanggalKeluar = (() => {
-        if (!dataTransaksi.tanggal_masuk || !dataTransaksi.estimasi_hari) return '';
-        const days = parseInt(dataTransaksi.estimasi_hari, 10);
-        if (isNaN(days) || days < 0) return '';
+        if (!dataTransaksi.tanggal_masuk || estimasiDays === null || isEstimasiInvalid) return '';
         const d = new Date(dataTransaksi.tanggal_masuk);
         if (isNaN(d.getTime())) return '';
-        d.setDate(d.getDate() + days);
-        return d.toISOString().split('T')[0];
+        d.setDate(d.getDate() + estimasiDays);
+        try {
+            return d.toISOString().split('T')[0];
+        } catch {
+            return '';
+        }
     })();
 
     // ── 3. Spesifikasi Atasan ──
@@ -295,6 +302,14 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
         });
     }
 
+    // Validasi durasi timeline kerja (maksimal 50 hari per tahap)
+    const invalidTimelineTask = timelineRows.find(row => {
+        if (row.durasi === '' || row.durasi === undefined) return false;
+        const d = parseInt(row.durasi, 10);
+        return isNaN(d) || d < 0 || d > 50;
+    });
+    const hasInvalidTimelineDuration = Boolean(invalidTimelineTask);
+
     // ── 6. Rincian Ukuran & Total (Size Breakdown) ──
     const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
     const initialUkuran = editItem?.data_ukuran || {};
@@ -537,6 +552,17 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
     async function handleSubmit(e) {
         e.preventDefault();
         setErrorMsg('');
+
+        if (isEstimasiInvalid) {
+            setErrorMsg('Estimasi hari pengerjaan harus antara 0 sampai 1000 hari.');
+            return;
+        }
+
+        if (hasInvalidTimelineDuration) {
+            setErrorMsg(`Durasi tahap "${invalidTimelineTask?.tugas || 'Timeline'}" harus antara 0 sampai 50 hari.`);
+            return;
+        }
+
         setSaving(true);
 
         const payload = {
@@ -973,7 +999,29 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
 
                     <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                         <div className="form-group">
-                            <label className="form-label">Tanggal Masuk (Manual Input)</label>
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Tanggal Masuk (Manual Input)</span>
+                                {(() => {
+                                    const todayStr = new Date().toISOString().split('T')[0];
+                                    if (dataTransaksi.tanggal_masuk && dataTransaksi.tanggal_masuk < todayStr) {
+                                        const diff = Math.round((new Date(todayStr) - new Date(dataTransaksi.tanggal_masuk)) / (1000 * 60 * 60 * 24));
+                                        return (
+                                            <span style={{
+                                                fontSize: '0.72rem',
+                                                background: 'rgba(245, 158, 11, 0.15)',
+                                                color: '#f59e0b',
+                                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                                padding: '0.1rem 0.45rem',
+                                                borderRadius: '4px',
+                                                fontWeight: 600
+                                            }}>
+                                                ⏳ Susulan ({diff} hari lalu)
+                                            </span>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </label>
                             <input
                                 className="form-input"
                                 type="date"
@@ -982,15 +1030,28 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Estimasi (Hari) - Bebas</label>
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Estimasi (Hari) - Bebas</span>
+                                <span style={{ fontSize: '0.72rem', color: isEstimasiInvalid ? '#ef4444' : 'var(--text-secondary)', fontWeight: 600 }}>
+                                    (Maks 1000 hari)
+                                </span>
+                            </label>
                             <input
                                 className="form-input"
                                 type="number"
                                 min="0"
+                                max="1000"
                                 value={dataTransaksi.estimasi_hari}
                                 onChange={e => setDataTransaksi({ ...dataTransaksi, estimasi_hari: e.target.value })}
                                 placeholder="Contoh: 21"
+                                style={isEstimasiInvalid ? { borderColor: '#ef4444' } : {}}
                             />
+                            {isEstimasiInvalid && (
+                                <div style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.35rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span className="material-icons-round" style={{ fontSize: '0.9rem' }}>error_outline</span>
+                                    Maksimal estimasi adalah 1000 hari (±2.7 tahun) dan tidak boleh negatif.
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label className="form-label">
@@ -1738,24 +1799,40 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
 
                                             {/* Durasi (Hari) */}
                                             <td style={{ padding: '0.55rem 0.5rem', border: '1px solid #e9d5ff', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        className="form-input"
-                                                        value={item.durasi}
-                                                        onChange={e => updateTimelineRow(idx, 'durasi', e.target.value)}
-                                                        style={{
-                                                            width: '56px',
-                                                            textAlign: 'center',
-                                                            fontWeight: 700,
-                                                            padding: '0.35rem 0.25rem',
-                                                            borderColor: '#c084fc'
-                                                        }}
-                                                        placeholder="0"
-                                                    />
-                                                    <span style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500 }}>Hari</span>
-                                                </div>
+                                                {(() => {
+                                                    const dVal = item.durasi !== '' && item.durasi !== undefined ? parseInt(item.durasi, 10) : null;
+                                                    const isRowInvalid = dVal !== null && (isNaN(dVal) || dVal < 0 || dVal > 50);
+                                                    return (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="50"
+                                                                    className="form-input"
+                                                                    value={item.durasi}
+                                                                    onChange={e => updateTimelineRow(idx, 'durasi', e.target.value)}
+                                                                    style={{
+                                                                        width: '56px',
+                                                                        textAlign: 'center',
+                                                                        fontWeight: 700,
+                                                                        padding: '0.35rem 0.25rem',
+                                                                        borderColor: isRowInvalid ? '#ef4444' : '#c084fc',
+                                                                        background: isRowInvalid ? 'rgba(239, 68, 68, 0.08)' : undefined
+                                                                    }}
+                                                                    placeholder="0"
+                                                                    title="Maksimal 50 hari per tahap"
+                                                                />
+                                                                <span style={{ fontSize: '0.72rem', color: isRowInvalid ? '#ef4444' : '#6b7280', fontWeight: 500 }}>Hari</span>
+                                                            </div>
+                                                            {isRowInvalid && (
+                                                                <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600 }}>
+                                                                    Maks 50h
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
 
                                             {/* PIC */}
@@ -1859,6 +1936,27 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
 
                             {/* Status indicator compared to Tanggal Keluar */}
                             {timelineStatusBadge}
+
+                            {/* Warning Banner if any step duration > 50 or < 0 */}
+                            {hasInvalidTimelineDuration && (
+                                <div style={{
+                                    width: '100%',
+                                    marginTop: '0.65rem',
+                                    padding: '0.5rem 0.85rem',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '6px',
+                                    color: '#ef4444',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}>
+                                    <span className="material-icons-round" style={{ fontSize: '1.05rem' }}>error_outline</span>
+                                    Durasi per tahap tidak boleh lebih dari 50 hari dan tidak boleh negatif (periksa tahap &ldquo;{invalidTimelineTask?.tugas || 'Tugas'}&rdquo;).
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

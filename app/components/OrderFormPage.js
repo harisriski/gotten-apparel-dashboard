@@ -54,21 +54,88 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
     const [savedOrder, setSavedOrder] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Days difference calculation
+    const daysAgo = data.tanggal && data.tanggal < todayStr
+        ? Math.round((new Date(todayStr) - new Date(data.tanggal)) / (1000 * 60 * 60 * 24))
+        : 0;
+
+    const daysProduction = data.shipping_date && data.tanggal
+        ? Math.round((new Date(data.shipping_date) - new Date(data.tanggal)) / (1000 * 60 * 60 * 24))
+        : null;
+
+    const isDeadlineInvalid = Boolean(data.shipping_date && data.tanggal && data.shipping_date < data.tanggal);
+
+    const MAX_QTY = 1000000; // 1 Juta pcs
+    const MAX_PRICE = 999999999999999; // 15 Digit (Rp 999 Triliun)
+
+    // Helper untuk memblokir tanda minus (-), plus (+), dan eksponen (e, E)
+    const blockNegativeAndExponent = (e) => {
+        if (['-', '+', 'e', 'E'].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+
     // Auto calculate values
-    const items = data.items.map(item => ({
-        ...item,
-        price: (parseInt(item.qty) || 0) * (parseInt(item.unit_price) || 0)
-    }));
+    const items = data.items.map(item => {
+        const q = Number(item.qty) || 0;
+        const p = Number(item.unit_price) || 0;
+        return {
+            ...item,
+            price: q * p
+        };
+    });
 
     const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-    const potonganAmount = parseInt(data.potongan) || 0;
-    const total = subtotal - potonganAmount + (parseInt(data.shipping_cost) || 0);
+    const potonganAmount = Number(data.potongan) || 0;
+    const total = Math.max(0, subtotal - potonganAmount + (Number(data.shipping_cost) || 0));
 
-    // Update items function
+    // Validasi pengecekan Qty & Harga
+    const hasInvalidQty = data.items.some(item => {
+        if (item.qty === '' || item.qty === undefined) return true;
+        const q = Number(item.qty);
+        return isNaN(q) || q < 1 || q > MAX_QTY;
+    });
+
+    const hasInvalidPrice = data.items.some(item => {
+        if (item.unit_price === '' || item.unit_price === undefined) return false;
+        const p = Number(item.unit_price);
+        return isNaN(p) || p < 0 || p > MAX_PRICE;
+    });
+
+    // Update items function dengan proteksi anti-minus & batas maksimal
     const updateItem = (index, field, value) => {
         const newItems = [...data.items];
-        newItems[index] = { ...newItems[index], [field]: value };
+        let sanitizedVal = value;
+
+        if (field === 'qty') {
+            if (value !== '') {
+                const cleaned = String(value).replace(/[^0-9]/g, '');
+                sanitizedVal = cleaned === '' ? '' : Math.min(MAX_QTY, Number(cleaned));
+            }
+        } else if (field === 'unit_price') {
+            if (value !== '') {
+                const cleaned = String(value).replace(/[^0-9]/g, '');
+                // Potong maksimal 15 digit angka
+                const truncated = cleaned.slice(0, 15);
+                sanitizedVal = truncated === '' ? '' : Number(truncated);
+            }
+        }
+
+        newItems[index] = { ...newItems[index], [field]: sanitizedVal };
         setData({ ...data, items: newItems });
+    };
+
+    // Update nominal field (Potongan, Ongkir, DP) anti-minus & max 15 digit
+    const updateNonNegativeField = (field, value) => {
+        if (value === '') {
+            setData({ ...data, [field]: '' });
+            return;
+        }
+        const cleaned = String(value).replace(/[^0-9]/g, '');
+        const truncated = cleaned.slice(0, 15);
+        setData({ ...data, [field]: truncated === '' ? '' : Number(truncated) });
     };
 
     const addItem = () => {
@@ -83,6 +150,18 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
+        if (isDeadlineInvalid) {
+            alert(`Tanggal pengiriman (deadline) tidak boleh sebelum tanggal pesanan (${data.tanggal})!`);
+            return;
+        }
+        if (hasInvalidQty) {
+            alert('Qty pada setiap produk harus minimal 1 dan maksimal 1.000.000 pcs (tidak boleh minus atau 0).');
+            return;
+        }
+        if (hasInvalidPrice) {
+            alert('Harga satuan tidak boleh minus dan maksimal 15 digit (Rp 999 Triliun).');
+            return;
+        }
         setSaving(true);
         try {
             const totalQty = items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
@@ -146,8 +225,36 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                     <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>1. Data Pelanggan</h3>
                     <div className="form-row">
                         <div className="form-group">
-                            <label className="form-label">Tanggal</label>
-                            <input className="form-input" type="date" required value={data.tanggal} onChange={e => setData({ ...data, tanggal: e.target.value })} />
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Tanggal</span>
+                                {daysAgo > 0 && (
+                                    <span style={{
+                                        fontSize: '0.72rem',
+                                        background: 'rgba(245, 158, 11, 0.15)',
+                                        color: '#f59e0b',
+                                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        padding: '0.15rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 600
+                                    }}>
+                                        ⏳ Pesanan Susulan ({daysAgo} hari lalu)
+                                    </span>
+                                )}
+                            </label>
+                            <input
+                                className="form-input"
+                                type="date"
+                                required
+                                value={data.tanggal}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    const update = { tanggal: val };
+                                    if (data.shipping_date && val && data.shipping_date < val) {
+                                        update.shipping_date = val;
+                                    }
+                                    setData({ ...data, ...update });
+                                }}
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Status Pesanan</label>
@@ -204,27 +311,84 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item, index) => (
-                                <tr key={item.id}>
-                                    <td>
-                                        <input className="form-input" required placeholder="Nama item / Ukuran" value={item.description} onChange={e => updateItem(index, 'description', e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input className="form-input" type="number" min="1" required value={item.qty} onChange={e => updateItem(index, 'qty', e.target.value)} />
-                                    </td>
-                                    <td>
-                                        <input className="form-input" type="number" min="0" required value={item.unit_price} onChange={e => updateItem(index, 'unit_price', e.target.value)} />
-                                    </td>
-                                    <td style={{ fontWeight: 600 }}>
-                                        {formatCurrency(item.price)}
-                                    </td>
-                                    <td>
-                                        <button type="button" className="action-btn" onClick={() => removeItem(index)} disabled={items.length <= 1} title="Hapus Baris" style={{ opacity: items.length <= 1 ? 0.3 : 1 }}>
-                                            <span className="material-icons-round">delete</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {items.map((item, index) => {
+                                const isQtyInvalid = item.qty !== '' && item.qty !== undefined && (Number(item.qty) < 1 || Number(item.qty) > MAX_QTY);
+                                const isPriceInvalid = item.unit_price !== '' && item.unit_price !== undefined && (Number(item.unit_price) < 0 || Number(item.unit_price) > MAX_PRICE);
+
+                                return (
+                                    <tr key={item.id}>
+                                        <td>
+                                            <input
+                                                className="form-input"
+                                                required
+                                                placeholder="Nama item / Ukuran"
+                                                value={item.description}
+                                                onChange={e => updateItem(index, 'description', e.target.value)}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <input
+                                                    className="form-input"
+                                                    type="number"
+                                                    min="1"
+                                                    max={MAX_QTY}
+                                                    required
+                                                    value={item.qty}
+                                                    onKeyDown={blockNegativeAndExponent}
+                                                    onChange={e => updateItem(index, 'qty', e.target.value)}
+                                                    placeholder="1"
+                                                    title="Minimal 1 pcs, maksimal 1.000.000 pcs (tidak boleh minus)"
+                                                    style={{
+                                                        textAlign: 'center',
+                                                        borderColor: isQtyInvalid ? '#ef4444' : undefined,
+                                                        background: isQtyInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
+                                                    }}
+                                                />
+                                                {isQtyInvalid && (
+                                                    <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'center' }}>
+                                                        {Number(item.qty) < 1 ? 'Min 1 pcs' : 'Maks 1 Juta pcs'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <input
+                                                    className="form-input"
+                                                    type="number"
+                                                    min="0"
+                                                    max={MAX_PRICE}
+                                                    required
+                                                    value={item.unit_price}
+                                                    onKeyDown={blockNegativeAndExponent}
+                                                    onChange={e => updateItem(index, 'unit_price', e.target.value)}
+                                                    placeholder="0"
+                                                    title="Maksimal 15 digit (Rp 999 Triliun)"
+                                                    style={{
+                                                        textAlign: 'right',
+                                                        borderColor: isPriceInvalid ? '#ef4444' : undefined,
+                                                        background: isPriceInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
+                                                    }}
+                                                />
+                                                {isPriceInvalid && (
+                                                    <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'right' }}>
+                                                        Maks 15 digit
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td style={{ fontWeight: 600 }}>
+                                            {formatCurrency(item.price)}
+                                        </td>
+                                        <td>
+                                            <button type="button" className="action-btn" onClick={() => removeItem(index)} disabled={items.length <= 1} title="Hapus Baris" style={{ opacity: items.length <= 1 ? 0.3 : 1 }}>
+                                                <span className="material-icons-round">delete</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                     <button type="button" className="btn-secondary" onClick={addItem} style={{ marginTop: '1rem', borderStyle: 'dashed' }}>
@@ -238,8 +402,37 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                     <div className="form-page-card" style={{ flex: 1 }}>
                         <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>3. Pengiriman</h3>
                         <div className="form-group">
-                            <label className="form-label">Tanggal Pengiriman (Deadline)</label>
-                            <input className="form-input" type="date" required value={data.shipping_date} onChange={e => setData({ ...data, shipping_date: e.target.value })} />
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Tanggal Pengiriman (Deadline)</span>
+                                {daysProduction !== null && !isDeadlineInvalid && (
+                                    <span style={{
+                                        fontSize: '0.72rem',
+                                        background: 'rgba(16, 185, 129, 0.12)',
+                                        color: '#10b981',
+                                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                                        padding: '0.15rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 600
+                                    }}>
+                                        ⏱️ {daysProduction} hari pengerjaan
+                                    </span>
+                                )}
+                            </label>
+                            <input
+                                className="form-input"
+                                type="date"
+                                required
+                                min={data.tanggal || todayStr}
+                                value={data.shipping_date}
+                                onChange={e => setData({ ...data, shipping_date: e.target.value })}
+                                style={isDeadlineInvalid ? { borderColor: '#ef4444' } : {}}
+                            />
+                            {isDeadlineInvalid && (
+                                <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '0.35rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>error_outline</span>
+                                    Deadline tidak boleh sebelum tanggal pesanan ({data.tanggal})
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Metode Pengiriman</label>
@@ -263,7 +456,18 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                         <div className="detail-row" style={{ alignItems: 'center' }}>
                             <span className="detail-label">Potongan (Rp)</span>
                             <div style={{ width: '50%' }}>
-                                <input className="form-input" type="number" min="0" value={data.potongan} onChange={e => setData({ ...data, potongan: e.target.value })} placeholder="0" style={{ textAlign: 'right' }} />
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    min="0"
+                                    max={MAX_PRICE}
+                                    value={data.potongan}
+                                    onKeyDown={blockNegativeAndExponent}
+                                    onChange={e => updateNonNegativeField('potongan', e.target.value)}
+                                    placeholder="0"
+                                    title="Maksimal 15 digit"
+                                    style={{ textAlign: 'right' }}
+                                />
                             </div>
                         </div>
                         {potonganAmount > 0 && (
@@ -276,14 +480,36 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                         <div className="detail-row" style={{ alignItems: 'center' }}>
                             <span className="detail-label">Biaya Pengiriman</span>
                             <div style={{ width: '50%' }}>
-                                <input className="form-input" type="number" min="0" value={data.shipping_cost} onChange={e => setData({ ...data, shipping_cost: e.target.value })} placeholder="0" style={{ textAlign: 'right' }} />
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    min="0"
+                                    max={MAX_PRICE}
+                                    value={data.shipping_cost}
+                                    onKeyDown={blockNegativeAndExponent}
+                                    onChange={e => updateNonNegativeField('shipping_cost', e.target.value)}
+                                    placeholder="0"
+                                    title="Maksimal 15 digit"
+                                    style={{ textAlign: 'right' }}
+                                />
                             </div>
                         </div>
 
                         <div className="detail-row" style={{ alignItems: 'center' }}>
                             <span className="detail-label">Down Payment (DP)</span>
                             <div style={{ width: '50%' }}>
-                                <input className="form-input" type="number" min="0" value={data.dp} onChange={e => setData({ ...data, dp: e.target.value })} placeholder="0" style={{ textAlign: 'right' }} />
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    min="0"
+                                    max={MAX_PRICE}
+                                    value={data.dp}
+                                    onKeyDown={blockNegativeAndExponent}
+                                    onChange={e => updateNonNegativeField('dp', e.target.value)}
+                                    placeholder="0"
+                                    title="Maksimal 15 digit"
+                                    style={{ textAlign: 'right' }}
+                                />
                             </div>
                         </div>
 

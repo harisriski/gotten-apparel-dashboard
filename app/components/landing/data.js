@@ -22,6 +22,7 @@ export const INSTAGRAM = [
 export const NAV_LINKS = [
     { href: '#produksi', label: 'Kualitas' },
     { href: '#harga', label: 'Harga' },
+    { href: '#size-chart', label: 'Size Chart' },
     { href: '#cara-pesan', label: 'Cara Pesan' },
     { href: '#portofolio', label: 'Portofolio' },
     { href: '#kontak', label: 'Kontak' },
@@ -220,6 +221,25 @@ export const SIZE_FEES = [
     { size: '2XL', fee: '+Rp10.000' },
     { size: '3XL', fee: '+Rp20.000' },
     { size: '4XL', fee: '+Rp30.000' },
+];
+
+export const ADULT_SIZE_CHART = [
+    { size: 'S', width: 48, length: 66, fee: 'Normal' },
+    { size: 'M', width: 50, length: 68, fee: 'Normal' },
+    { size: 'L', width: 52, length: 70, fee: 'Normal' },
+    { size: 'XL', width: 54, length: 72, fee: 'Normal' },
+    { size: '2XL', width: 56, length: 74, fee: '+Rp10.000' },
+    { size: '3XL', width: 58, length: 76, fee: '+Rp20.000' },
+    { size: '4XL', width: 60, length: 78, fee: '+Rp30.000' },
+];
+
+export const KIDS_SIZE_CHART = [
+    { size: 'XS', age: '2 – 3 Tahun', width: 32, length: 38 },
+    { size: 'S', age: '4 – 5 Tahun', width: 34, length: 42 },
+    { size: 'M', age: '6 – 7 Tahun', width: 36, length: 49 },
+    { size: 'L', age: '8 – 9 Tahun', width: 39, length: 52 },
+    { size: 'XL', age: '10 – 11 Tahun', width: 42, length: 55 },
+    { size: 'XXL', age: '12 – 13 Tahun', width: 44, length: 58 },
 ];
 
 export const BONUS_EXAMPLES = [

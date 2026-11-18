@@ -422,11 +422,12 @@
 }
 
 /* ==========================================================================
-   Production Details / Quality Section
+   Production Details / Quality Section (Bento Grid 1 Big + 4 Compact)
    ========================================================================== */
 .detailsGrid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, auto);
   gap: 1.5rem;
 }
 
@@ -448,23 +449,28 @@
 }
 
 .detailCardBig {
-  grid-column: span 6;
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
 }
 
 .detailCardSmall {
-  grid-column: span 3;
+  grid-column: span 1;
 }
 
 .detailCardImageWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
   background: #090c0f;
 }
 
 .detailCardBig .detailCardImageWrapper {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: unset;
+  flex: 1;
+  min-height: 280px;
 }
 
 .detailCardImg {
@@ -482,38 +488,54 @@
   position: absolute;
   top: 1rem;
   left: 1rem;
-  background: rgba(11, 14, 17, 0.8);
+  background: rgba(11, 14, 17, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #10b981;
   font-family: 'Oswald', sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.65rem;
   border-radius: 6px;
   letter-spacing: 0.05em;
+  z-index: 2;
 }
 
 .detailCardBody {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
-  flex: 1;
+}
+
+.detailCardBig .detailCardBody {
+  padding: 1.75rem 2rem;
 }
 
 .detailCardTitle {
   font-family: 'Oswald', sans-serif;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: #fff;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.detailCardBig .detailCardTitle {
+  font-size: 1.65rem;
   margin-bottom: 0.5rem;
+  color: #ffffff;
 }
 
 .detailCardText {
   color: #94a3b8;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.detailCardBig .detailCardText {
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 /* ==========================================================================
@@ -1536,11 +1558,19 @@
 }
 
 @media (max-width: 1024px) {
+  .detailsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .detailCardBig {
-    grid-column: span 12;
+    grid-column: span 2;
+    grid-row: auto;
+  }
+  .detailCardBig .detailCardImageWrapper {
+    aspect-ratio: 16 / 9;
+    min-height: unset;
   }
   .detailCardSmall {
-    grid-column: span 6;
+    grid-column: span 1;
   }
   .pricingExtrasColumns {
     grid-template-columns: 1fr;
@@ -1599,8 +1629,11 @@
   .statItem:nth-child(2)::after {
     display: none;
   }
-  .detailCardSmall {
-    grid-column: span 12;
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+  .detailCardBig, .detailCardSmall {
+    grid-column: span 1;
   }
   .priceFeatureList {
     grid-template-columns: 1fr;
@@ -1637,3 +1670,368 @@
     border-radius: 50%;
   }
 }
+
+/* ==========================================================================
+   Interactive Size Chart Component (Dewasa & Anak)
+   ========================================================================== */
+.sizeChartCard {
+  background: #11161d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.25rem;
+  margin-top: 2rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.sizeChartCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  width: 400px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.sizeChartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.sizeChartHeaderLeft {
+  max-width: 650px;
+}
+
+.sizeChartTitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+  line-height: 1.15;
+}
+
+.sizeChartTitle span {
+  color: #10b981;
+}
+
+.sizeChartSubtitle {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Tab Switcher */
+.sizeChartTabs {
+  display: inline-flex;
+  background: #090c0f;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.35rem;
+}
+
+.sizeTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.sizeTabBtn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sizeTabBtnActive {
+  background: #10b981 !important;
+  color: #0b0e11 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+/* Body layout */
+.sizeChartBody {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2rem;
+  align-items: stretch;
+}
+
+/* Left: Visual Card */
+.sizeVisualCard {
+  background: #0b0f14;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+}
+
+.sizeVisualTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.sizeVisualTitle span.material-icons-round {
+  color: #10b981;
+  font-size: 1.2rem;
+}
+
+.svgWrapper {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.jerseySvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.sizeGuideNotes {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.guideStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.guideStep strong {
+  color: #f1f5f9;
+}
+
+.guideStepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.guideTolerance {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  margin-top: 0.25rem;
+}
+
+/* Right: Table Card */
+.sizeTableCard {
+  background: #0b0f14;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+}
+
+.tableCategoryHeader {
+  margin-bottom: 1rem;
+}
+
+.categoryInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tableResponsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92rem;
+}
+
+.dataTable thead th {
+  background: #141b22;
+  color: #94a3b8;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.82rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dataTable thead th:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.dataTable thead th:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.dataTable tbody tr {
+  transition: background 0.2s ease;
+}
+
+.dataTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dataTable tbody td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.colSize {
+  font-weight: 800;
+}
+
+.sizeTag {
+  display: inline-block;
+  min-width: 38px;
+  text-align: center;
+  padding: 0.2rem 0.45rem;
+  background: #1e293b;
+  color: #f8fafc;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sizeTagKids {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.colAge {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.colVal {
+  font-variant-numeric: tabular-nums;
+  color: #f1f5f9;
+}
+
+.colVal strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.unit {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.feeNormalBadge {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.feeJumboBadge {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.jumboRow td {
+  background: rgba(245, 158, 11, 0.02);
+}
+
+.tableFootnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+@media (max-width: 960px) {
+  .sizeChartBody {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .sizeChartCard {
+    padding: 1.5rem;
+  }
+  .sizeChartHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sizeChartTabs {
+    width: 100%;
+  }
+  .sizeTabBtn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+

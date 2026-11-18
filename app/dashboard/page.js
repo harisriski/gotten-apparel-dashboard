@@ -158,7 +158,7 @@ export default function Dashboard() {
     finance: <FinancePage onAdd={handleFinanceAdd} onEdit={handleFinanceEdit} />,
     customers: <CustomersPage onAdd={handleCustomerAdd} onEdit={handleCustomerEdit} onDetail={handleCustomerDetail} />,
     inventory: <InventoryPage onAddRaw={handleInventoryAddRaw} onEditRaw={handleInventoryEditRaw} onAddStock={handleInventoryAddStock} onEditStock={handleInventoryEditStock} />,
-    production: <WorkOrderPage onAdd={handleProductionAdd} onEdit={handleProductionEdit} />,
+    production: <WorkOrderPage onEdit={handleProductionEdit} />,
   };
 
   return (

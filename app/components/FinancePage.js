@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Chart from 'chart.js/auto';
 
 function formatCurrency(num) {
@@ -53,6 +53,7 @@ export default function FinancePage({ onAdd, onEdit }) {
     const expenseChart = useRef(null);
     const [filterYear, setFilterYear] = useState('');
     const [filterMonth, setFilterMonth] = useState('');
+    const [filterDay, setFilterDay] = useState('');
 
     // ── Table controls ──
     const [typeFilter, setTypeFilter] = useState('');
@@ -60,18 +61,62 @@ export default function FinancePage({ onAdd, onEdit }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [expandedOrders, setExpandedOrders] = useState({});
 
+    const currentYear = new Date().getFullYear();
+    const [availableYears, setAvailableYears] = useState([String(currentYear)]);
+
+    function fetchAvailableYears() {
+        fetch('/api/finance/years')
+            .then(r => r.json())
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    setAvailableYears(data);
+                }
+            })
+            .catch(err => console.error('Failed to fetch finance years:', err));
+    }
+
+    useEffect(() => {
+        fetchAvailableYears();
+    }, []);
+
+    const dayOptions = useMemo(() => {
+        return Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+    }, []);
+
     function fetchData() {
         setLoading(true);
         let url = '/api/finance?';
-        if (filterYear) url += `year=${filterYear}&`;
-        if (filterMonth) url += `month=${filterMonth}&`;
+        if (filterYear) url += `year=${encodeURIComponent(filterYear)}&`;
+        if (filterMonth) url += `month=${encodeURIComponent(filterMonth)}&`;
+        if (filterDay) url += `day=${encodeURIComponent(filterDay)}&`;
         fetch(url)
             .then(r => r.json())
             .then(d => { setData(d); setLoading(false); })
             .catch(err => { console.error(err); setLoading(false); });
     }
 
-    useEffect(() => { fetchData(); }, [filterYear, filterMonth]);
+    useEffect(() => { fetchData(); }, [filterYear, filterMonth, filterDay]);
+
+    function handleResetFilters() {
+        setFilterYear('');
+        setFilterMonth('');
+        setFilterDay('');
+        setSearchQuery('');
+        setTypeFilter('');
+    }
+
+    const hasActiveFilter = Boolean(filterYear || filterMonth || filterDay || searchQuery || typeFilter);
+
+    const activePeriodLabel = useMemo(() => {
+        const parts = [];
+        if (filterDay) parts.push(`Tgl ${filterDay}`);
+        if (filterMonth) {
+            const m = monthOptions.find(x => x.value === filterMonth);
+            if (m && m.value) parts.push(m.label);
+        }
+        if (filterYear) parts.push(filterYear);
+        return parts.join(' ');
+    }, [filterYear, filterMonth, filterDay]);
 
     // Reset page when filters change
     useEffect(() => { setCurrentPage(1); }, [typeFilter, searchQuery]);
@@ -172,20 +217,17 @@ export default function FinancePage({ onAdd, onEdit }) {
         } catch (err) { console.error(err); }
     }
 
-    if (loading) return (
-        <div className="page-content">
-            <div className="finance-kpi">{[1, 2, 3, 4].map(i => <div key={i} className="skeleton skeleton-card" />)}</div>
-        </div>
-    );
-
-    if (!data) return <div className="page-content"><p>Gagal memuat data.</p></div>;
-
-    const profit = data.summary.totalIn - data.summary.totalOut;
-    const profitMargin = data.summary.totalIn > 0 ? ((profit / data.summary.totalIn) * 100).toFixed(1) : 0;
-    const ops = data.orderProfitSummary || { totalLabaBersih: 0, totalHpp: 0, totalHargaPesanan: 0, avgMargin: 0, orderCount: 0, lunasCount: 0 };
+    const summary = data?.summary || { totalIn: 0, totalOut: 0, balance: 0 };
+    const profit = (summary.totalIn || 0) - (summary.totalOut || 0);
+    const profitMargin = summary.totalIn > 0 ? ((profit / summary.totalIn) * 100).toFixed(1) : 0;
+    const ops = data?.orderProfitSummary || { totalLabaBersih: 0, totalHpp: 0, totalHargaPesanan: 0, avgMargin: 0, orderCount: 0, lunasCount: 0 };
+    const transactionsList = Array.isArray(data?.transactions) ? data.transactions : [];
+    const monthlyCashflow = Array.isArray(data?.monthlyCashflow) ? data.monthlyCashflow : [];
+    const expenseBreakdown = Array.isArray(data?.expenseBreakdown) ? data.expenseBreakdown : [];
+    const orderProfitData = Array.isArray(data?.orderProfitData) ? data.orderProfitData : [];
 
     // ── Filter + Search + Pagination logic ──
-    const filteredTransactions = data.transactions.filter(t => {
+    const filteredTransactions = transactionsList.filter(t => {
         // Skip filtering for profit tab (handled separately)
         if (typeFilter === 'profit') return false;
 
@@ -226,7 +268,7 @@ export default function FinancePage({ onAdd, onEdit }) {
     );
 
     // Count per type for badges
-    const pendingDpCount = data.transactions.filter(t => {
+    const pendingDpCount = transactionsList.filter(t => {
         if (t.type !== 'dp') return false;
         const orderPrice = t.order_price || 0;
         const orderPaid = (t.order_dp || 0) + (t.order_pelunasan || 0);
@@ -234,11 +276,11 @@ export default function FinancePage({ onAdd, onEdit }) {
     }).length;
 
     const typeCounts = {
-        '': data.transactions.length,
-        manual: data.transactions.filter(t => (t.type || 'manual') === 'manual').length,
+        '': transactionsList.length,
+        manual: transactionsList.filter(t => (t.type || 'manual') === 'manual').length,
         dp: pendingDpCount,
-        pelunasan: data.transactions.filter(t => t.type === 'pelunasan').length,
-        profit: (data.orderProfitData || []).length,
+        pelunasan: transactionsList.filter(t => t.type === 'pelunasan').length,
+        profit: (data?.orderProfitData || []).length,
     };
 
     // Toggle expand for order profit rows
@@ -286,28 +328,279 @@ export default function FinancePage({ onAdd, onEdit }) {
 
     return (
         <div className="page-content">
-            {/* Date Filter */}
-            <div className="page-filters">
-                <div className="page-filters-left">
-                    <div className="date-filter">
-                        <div className="date-filter-item">
-                            <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>calendar_month</span>
-                            <select className="date-filter-select" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
-                                {yearOptions.map(y => <option key={y.value} value={y.value}>{y.label}</option>)}
-                            </select>
-                        </div>
-                        <div className="date-filter-item">
-                            <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>date_range</span>
-                            <select className="date-filter-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-                                {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                            </select>
-                        </div>
-                    </div>
+            {/* Top Bar: Title & Primary CTA */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.25rem',
+                flexWrap: 'wrap',
+                gap: '1rem'
+            }}>
+                <div>
+                    <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                        <span className="material-icons-round" style={{ color: '#10b981', fontSize: '1.6rem' }}>
+                            account_balance_wallet
+                        </span>
+                        Keuangan & Arus Kas
+                    </h2>
+                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Pantau mutasi debit kredit, laba rugi pesanan, HPP produksi, dan ringkasan arus kas berkala.
+                    </p>
                 </div>
-                <button className="btn-add" onClick={onAdd}>
-                    <span className="material-icons-round" style={{ fontSize: '1rem' }}>add</span>
+
+                <button className="btn-add" onClick={onAdd} style={{ padding: '0.55rem 1.15rem' }}>
+                    <span className="material-icons-round" style={{ fontSize: '1.15rem' }}>add</span>
                     Tambah Transaksi
                 </button>
+            </div>
+
+            {/* Filter Bar Work Order Style (Search + Tahun + Bulan + Tanggal + Reset) */}
+            <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '0.85rem 1.15rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+            }}>
+                {/* Search Text */}
+                <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '220px' }}>
+                    <input
+                        type="text"
+                        className="form-input"
+                        style={{
+                            paddingLeft: '2.25rem',
+                            height: '38px',
+                            fontSize: '0.875rem',
+                            width: '100%',
+                            borderRadius: '8px',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-color)'
+                        }}
+                        placeholder="Cari deskripsi, kategori, customer, ID pesanan..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    <span
+                        className="material-icons-round"
+                        style={{
+                            position: 'absolute',
+                            left: '0.75rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            fontSize: '1.15rem',
+                            color: 'var(--text-secondary)'
+                        }}
+                    >
+                        search
+                    </span>
+                </div>
+
+                {/* Filter Tahun */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span className="material-icons-round" style={{ fontSize: '1.15rem', color: 'var(--text-secondary)' }}>
+                        calendar_today
+                    </span>
+                    <select
+                        className="form-select"
+                        value={filterYear}
+                        onChange={e => setFilterYear(e.target.value)}
+                        style={{
+                            height: '38px',
+                            fontSize: '0.85rem',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            minWidth: '130px',
+                            fontWeight: filterYear ? 700 : 500
+                        }}
+                    >
+                        <option value="">Semua Tahun</option>
+                        {availableYears.map(y => (
+                            <option key={y} value={y}>Tahun {y}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Filter Bulan */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span className="material-icons-round" style={{ fontSize: '1.15rem', color: 'var(--text-secondary)' }}>
+                        date_range
+                    </span>
+                    <select
+                        className="form-select"
+                        value={filterMonth}
+                        onChange={e => setFilterMonth(e.target.value)}
+                        style={{
+                            height: '38px',
+                            fontSize: '0.85rem',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            minWidth: '140px',
+                            fontWeight: filterMonth ? 700 : 500
+                        }}
+                    >
+                        <option value="">Semua Bulan</option>
+                        {monthOptions.filter(m => m.value !== '').map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Filter Tanggal / Hari */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span className="material-icons-round" style={{ fontSize: '1.15rem', color: 'var(--text-secondary)' }}>
+                        event
+                    </span>
+                    <select
+                        className="form-select"
+                        value={filterDay}
+                        onChange={e => setFilterDay(e.target.value)}
+                        style={{
+                            height: '38px',
+                            fontSize: '0.85rem',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            minWidth: '120px',
+                            fontWeight: filterDay ? 700 : 500
+                        }}
+                    >
+                        <option value="">Semua Tgl</option>
+                        {dayOptions.map(d => (
+                            <option key={d} value={d}>Tgl {d}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Reset Filter Button */}
+                {hasActiveFilter && (
+                    <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        style={{
+                            height: '38px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            padding: '0.35rem 0.85rem',
+                            borderRadius: '8px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            transition: 'all 0.2s ease'
+                        }}
+                        title="Bersihkan semua filter"
+                    >
+                        <span className="material-icons-round" style={{ fontSize: '1.05rem' }}>restart_alt</span>
+                        Reset
+                    </button>
+                )}
+            </div>
+
+            {/* Summary Metrics Bar (Realtime) */}
+            <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '10px',
+                padding: '0.65rem 1.15rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                fontSize: '0.88rem'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <span className="material-icons-round" style={{ color: '#10b981', fontSize: '1.2rem' }}>
+                        analytics
+                    </span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {isProfitTab
+                            ? `Menampilkan ${(data?.orderProfitData || []).length} Pesanan Laba/Rugi`
+                            : `Menampilkan ${filteredTransactions.length} Transaksi`}
+                    </span>
+
+                    {activePeriodLabel && (
+                        <span style={{
+                            background: '#10b981',
+                            color: '#ffffff',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.02em'
+                        }}>
+                            📅 Periode: {activePeriodLabel}
+                        </span>
+                    )}
+
+                    {searchQuery && (
+                        <span style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-secondary)',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem'
+                        }}>
+                            🔍 "{searchQuery}"
+                        </span>
+                    )}
+
+                    {typeFilter && (
+                        <span style={{
+                            background: 'rgba(59, 130, 246, 0.15)',
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700
+                        }}>
+                            Tipe: {TYPE_FILTERS.find(x => x.value === typeFilter)?.label || typeFilter}
+                        </span>
+                    )}
+                </div>
+
+                {!isProfitTab && data && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        fontSize: '0.88rem',
+                        color: 'var(--text-secondary)'
+                    }}>
+                        <span>
+                            Debit Masuk: <strong style={{ color: '#10b981' }}>{formatCurrency(summary.totalIn)}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                            Kredit Keluar: <strong style={{ color: '#f43f5e' }}>{formatCurrency(summary.totalOut)}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                            Saldo Kas: <strong style={{ color: (summary.balance ?? profit) >= 0 ? '#38bdf8' : '#ef4444' }}>{formatCurrency(summary.balance ?? profit)}</strong>
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Financial KPIs */}
@@ -359,7 +652,7 @@ export default function FinancePage({ onAdd, onEdit }) {
                         </div>
                         <div className="kpi-content">
                             <span className="kpi-label">Total Debit (Masuk)</span>
-                            <span className="kpi-value"><AnimatedValue target={data.summary.totalIn} prefix="Rp " /></span>
+                            <span className="kpi-value"><AnimatedValue target={summary.totalIn} prefix="Rp " /></span>
                         </div>
                     </div>
                     <div className="kpi-card" style={{ '--accent': '#f87171' }}>
@@ -368,7 +661,7 @@ export default function FinancePage({ onAdd, onEdit }) {
                         </div>
                         <div className="kpi-content">
                             <span className="kpi-label">Total Kredit (Keluar)</span>
-                            <span className="kpi-value"><AnimatedValue target={data.summary.totalOut} prefix="Rp " /></span>
+                            <span className="kpi-value"><AnimatedValue target={summary.totalOut} prefix="Rp " /></span>
                         </div>
                     </div>
                     <div className="kpi-card" style={{ '--accent': '#a78bfa' }}>
@@ -398,7 +691,7 @@ export default function FinancePage({ onAdd, onEdit }) {
                     <div className="chart-header">
                         <h3>📊 Arus Kas Bulanan</h3>
                     </div>
-                    {data.monthlyCashflow.length === 0 ? (
+                    {monthlyCashflow.length === 0 ? (
                         <div className="chart-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada data transaksi</div>
                     ) : (
                         <div className="chart-body">
@@ -411,19 +704,19 @@ export default function FinancePage({ onAdd, onEdit }) {
                     <div className="chart-header">
                         <h3>🧾 Komposisi Pengeluaran</h3>
                     </div>
-                    {data.expenseBreakdown.length === 0 ? (
+                    {expenseBreakdown.length === 0 ? (
                         <div className="doughnut-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada data pengeluaran</div>
                     ) : (
                         <>
                             <div className="doughnut-container">
                                 <canvas ref={expenseRef}></canvas>
                                 <div className="doughnut-center">
-                                    <span className="doughnut-value">{formatCurrency(data.summary.totalOut)}</span>
+                                    <span className="doughnut-value">{formatCurrency(summary.totalOut)}</span>
                                     <span className="doughnut-label">Total Kredit</span>
                                 </div>
                             </div>
                             <div className="chart-legend">
-                                {data.expenseBreakdown.map((item, i) => (
+                                {expenseBreakdown.map((item, i) => (
                                     <div className="legend-item" key={i}>
                                         <span className="legend-dot" style={{ background: item.color }} />
                                         <span>{item.label} ({item.value}%)</span>
@@ -496,9 +789,9 @@ export default function FinancePage({ onAdd, onEdit }) {
                 {isProfitTab ? (
                     <>
                         <div className="table-results-info">
-                            Menampilkan {(data.orderProfitData || []).length} pesanan dengan transaksi HPP
+                            Menampilkan {orderProfitData.length} pesanan dengan transaksi HPP
                         </div>
-                        {(data.orderProfitData || []).length === 0 ? (
+                        {orderProfitData.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                                 <span className="material-icons-round" style={{ fontSize: '2.5rem', opacity: 0.3, display: 'block', marginBottom: '0.75rem' }}>analytics</span>
                                 <p>Belum ada pesanan dengan transaksi HPP terkait.</p>
@@ -519,7 +812,7 @@ export default function FinancePage({ onAdd, onEdit }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {(data.orderProfitData || []).map(op => (
+                                        {orderProfitData.map(op => (
                                             <React.Fragment key={op.order_id}>
                                                 <tr
                                                     className={`profit-row ${expandedOrders[op.order_id] ? 'expanded' : ''}`}

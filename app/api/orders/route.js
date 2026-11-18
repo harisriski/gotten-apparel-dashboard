@@ -24,12 +24,12 @@ export async function GET(request) {
             params.push(searchTerm, searchTerm, searchTerm);
         }
         if (year) {
-            conditions.push("strftime('%Y', created_at) = ?");
+            conditions.push("substr(COALESCE(NULLIF(tanggal, ''), created_at), 1, 4) = ?");
             params.push(year);
         }
         if (month) {
-            conditions.push("strftime('%m', created_at) = ?");
-            params.push(month);
+            conditions.push("substr(COALESCE(NULLIF(tanggal, ''), created_at), 6, 2) = ?");
+            params.push(month.padStart(2, '0'));
         }
 
         if (conditions.length > 0) {
@@ -48,6 +48,49 @@ export async function POST(request) {
     try {
         const db = getDb();
         const body = await request.json();
+
+        // Validate deadline not before order date
+        if (body.shipping_date && body.tanggal && body.shipping_date < body.tanggal) {
+            return NextResponse.json(
+                { error: 'Tanggal pengiriman (deadline) tidak boleh sebelum tanggal pesanan.' },
+                { status: 400 }
+            );
+        }
+
+        // Validate items: QTY (1 - 1.000.000) and Unit Price (0 - 999.000.000.000.000 / 15 digit)
+        let itemsList = body.items;
+        if (typeof itemsList === 'string') {
+            try { itemsList = JSON.parse(itemsList); } catch { itemsList = []; }
+        }
+        if (Array.isArray(itemsList)) {
+            for (const item of itemsList) {
+                const q = Number(item.qty);
+                if (isNaN(q) || q < 1 || q > 1000000) {
+                    return NextResponse.json(
+                        { error: `Qty produk "${item.description || 'Item'}" harus antara 1 sampai 1.000.000 pcs dan tidak boleh minus.` },
+                        { status: 400 }
+                    );
+                }
+                const p = Number(item.unit_price);
+                if (isNaN(p) || p < 0 || p > 999999999999999) {
+                    return NextResponse.json(
+                        { error: `Harga satuan produk "${item.description || 'Item'}" tidak boleh minus dan maksimal 15 digit (Rp 999 Triliun).` },
+                        { status: 400 }
+                    );
+                }
+            }
+        }
+
+        // Validate non-negative financial fields
+        if (body.potongan !== undefined && (Number(body.potongan) < 0 || Number(body.potongan) > 999999999999999)) {
+            return NextResponse.json({ error: 'Nilai potongan tidak boleh minus dan maksimal 15 digit.' }, { status: 400 });
+        }
+        if (body.shipping_cost !== undefined && (Number(body.shipping_cost) < 0 || Number(body.shipping_cost) > 999999999999999)) {
+            return NextResponse.json({ error: 'Biaya pengiriman tidak boleh minus dan maksimal 15 digit.' }, { status: 400 });
+        }
+        if (body.dp !== undefined && (Number(body.dp) < 0 || Number(body.dp) > 999999999999999)) {
+            return NextResponse.json({ error: 'Down Payment (DP) tidak boleh minus dan maksimal 15 digit.' }, { status: 400 });
+        }
 
         const lastOrder = db.prepare(`
             SELECT id FROM orders 

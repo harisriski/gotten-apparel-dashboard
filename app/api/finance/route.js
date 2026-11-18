@@ -32,11 +32,13 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const year = searchParams.get('year');
         const month = searchParams.get('month');
+        const day = searchParams.get('day');
 
         let dateFilter = '';
         const dateParams = [];
-        if (year) { dateFilter += " AND strftime('%Y', date) = ?"; dateParams.push(year); }
-        if (month) { dateFilter += " AND strftime('%m', date) = ?"; dateParams.push(month); }
+        if (year) { dateFilter += " AND substr(date, 1, 4) = ?"; dateParams.push(year); }
+        if (month) { dateFilter += " AND substr(date, 6, 2) = ?"; dateParams.push(month.padStart(2, '0')); }
+        if (day) { dateFilter += " AND substr(date, 9, 2) = ?"; dateParams.push(day.padStart(2, '0')); }
 
         const transactions = db.prepare(`
             SELECT t.*, o.customer AS order_customer, o.product AS order_product,
@@ -201,6 +203,52 @@ export async function POST(request) {
         const db = getDb();
         const body = await request.json();
 
+        // Validasi HPP Project (Mandatori Pesanan & Sisa Plafon Anggaran)
+        if (body.category_group === 'HPP' || body.linked_order) {
+            const orderId = (body.linked_order || '').trim();
+            if (!orderId) {
+                return NextResponse.json(
+                    { error: 'Pesanan / Project wajib dipilih untuk pencatatan HPP.' },
+                    { status: 400 }
+                );
+            }
+
+            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+            if (!order) {
+                return NextResponse.json(
+                    { error: `Pesanan "${orderId}" tidak ditemukan.` },
+                    { status: 404 }
+                );
+            }
+
+            const amountOut = Number(body.amount_out) || 0;
+            if (amountOut <= 0) {
+                return NextResponse.json(
+                    { error: 'Jumlah pengeluaran (Kredit) harus lebih dari 0 dan tidak boleh minus.' },
+                    { status: 400 }
+                );
+            }
+
+            // Hitung HPP yang sudah tercatat sebelumnya untuk pesanan ini
+            const existingHppRow = db.prepare(`
+                SELECT COALESCE(SUM(amount_out), 0) as totalHpp
+                FROM transactions
+                WHERE order_id = ? AND category_group = 'HPP'
+            `).get(orderId);
+            const existingHpp = Number(existingHppRow?.totalHpp) || 0;
+            const orderPrice = Number(order.price) || 0;
+            const sisaPlafon = Math.max(0, orderPrice - existingHpp);
+
+            if (amountOut > sisaPlafon) {
+                return NextResponse.json(
+                    { 
+                        error: `Nominal HPP (Rp ${amountOut.toLocaleString('id-ID')}) melebihi sisa plafon anggaran proyek (Maksimal Rp ${sisaPlafon.toLocaleString('id-ID')}). Total nilai proyek: Rp ${orderPrice.toLocaleString('id-ID')}, HPP terpakai sebelumnya: Rp ${existingHpp.toLocaleString('id-ID')}.` 
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+
         const stmt = db.prepare(`
             INSERT INTO transactions (date, description, customer, category_group, category, category_sub, tx_type, amount_in, amount_out, order_id, type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual')
@@ -287,6 +335,53 @@ export async function PUT(request) {
         }
 
         // For normal (manual) transactions: standard update
+        const targetCategoryGroup = body.category_group ?? existing.category_group;
+        const targetOrderId = (body.linked_order ?? existing.order_id ?? '').trim();
+
+        if (targetCategoryGroup === 'HPP' || targetOrderId) {
+            if (!targetOrderId) {
+                return NextResponse.json(
+                    { error: 'Pesanan / Project wajib dipilih untuk pencatatan HPP.' },
+                    { status: 400 }
+                );
+            }
+
+            const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(targetOrderId);
+            if (!order) {
+                return NextResponse.json(
+                    { error: `Pesanan "${targetOrderId}" tidak ditemukan.` },
+                    { status: 404 }
+                );
+            }
+
+            const amountOut = Number(body.amount_out ?? existing.amount_out) || 0;
+            if (amountOut <= 0) {
+                return NextResponse.json(
+                    { error: 'Jumlah pengeluaran (Kredit) harus lebih dari 0 dan tidak boleh minus.' },
+                    { status: 400 }
+                );
+            }
+
+            // Hitung HPP yang sudah tercatat KECUALI transaksi yang sedang diedit ini
+            const existingHppRow = db.prepare(`
+                SELECT COALESCE(SUM(amount_out), 0) as totalHpp
+                FROM transactions
+                WHERE order_id = ? AND category_group = 'HPP' AND id != ?
+            `).get(targetOrderId, id);
+            const existingHpp = Number(existingHppRow?.totalHpp) || 0;
+            const orderPrice = Number(order.price) || 0;
+            const sisaPlafon = Math.max(0, orderPrice - existingHpp);
+
+            if (amountOut > sisaPlafon) {
+                return NextResponse.json(
+                    { 
+                        error: `Nominal HPP (Rp ${amountOut.toLocaleString('id-ID')}) melebihi sisa plafon anggaran proyek (Maksimal Rp ${sisaPlafon.toLocaleString('id-ID')}).` 
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+
         const stmt = db.prepare(`
             UPDATE transactions SET date=?, description=?, customer=?, category_group=?, category=?, category_sub=?, tx_type=?, amount_in=?, amount_out=?, order_id=?
             WHERE id=?

@@ -7,6 +7,9 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('search');
         const orderId = searchParams.get('order_id');
+        const year = searchParams.get('year');
+        const month = searchParams.get('month');
+        const day = searchParams.get('day');
 
         let query = 'SELECT * FROM work_orders';
         const conditions = [];
@@ -61,7 +64,28 @@ export async function GET(request) {
             })()
         }));
 
-        return NextResponse.json(workOrders);
+        // Filter by Date (tanggal_masuk with fallback to created_at)
+        let filteredWorkOrders = workOrders;
+        if (year || month || day) {
+            filteredWorkOrders = filteredWorkOrders.filter(wo => {
+                const tgl = wo.data_transaksi?.tanggal_masuk || wo.created_at || '';
+                if (!tgl) return false;
+
+                const datePart = tgl.split(' ')[0].split('T')[0];
+                const parts = datePart.split('-');
+                if (parts.length < 3) return false;
+
+                const [woYear, woMonth, woDay] = parts;
+
+                if (year && woYear !== year) return false;
+                if (month && woMonth !== month.padStart(2, '0')) return false;
+                if (day && woDay !== day.padStart(2, '0')) return false;
+
+                return true;
+            });
+        }
+
+        return NextResponse.json(filteredWorkOrders);
     } catch (error) {
         console.error('GET work_orders error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -72,6 +96,40 @@ export async function POST(request) {
     try {
         const db = getDb();
         const body = await request.json();
+
+        // Validate estimasi_hari
+        let dt = body.data_transaksi;
+        if (typeof dt === 'string') {
+            try { dt = JSON.parse(dt); } catch { dt = {}; }
+        }
+        if (dt && dt.estimasi_hari !== undefined && dt.estimasi_hari !== '' && dt.estimasi_hari !== null) {
+            const days = parseInt(dt.estimasi_hari, 10);
+            if (isNaN(days) || days < 0 || days > 1000) {
+                return NextResponse.json(
+                    { error: 'Estimasi hari pengerjaan harus antara 0 sampai 1000 hari.' },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // Validate timeline_kerja duration (max 50 days per step)
+        let tk = body.timeline_kerja;
+        if (typeof tk === 'string') {
+            try { tk = JSON.parse(tk); } catch { tk = []; }
+        }
+        if (Array.isArray(tk)) {
+            for (const task of tk) {
+                if (task.durasi !== undefined && task.durasi !== '' && task.durasi !== null) {
+                    const d = parseInt(task.durasi, 10);
+                    if (isNaN(d) || d < 0 || d > 50) {
+                        return NextResponse.json(
+                            { error: `Durasi tahap "${task.tugas || 'Timeline'}" harus antara 0 sampai 50 hari.` },
+                            { status: 400 }
+                        );
+                    }
+                }
+            }
+        }
 
         // Generate WO Number if not provided, e.g., WO-202611-0001
         let woNumber = body.wo_number;
@@ -141,6 +199,40 @@ export async function PUT(request) {
         const { id } = body;
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+        // Validate estimasi_hari
+        let dt = body.data_transaksi;
+        if (typeof dt === 'string') {
+            try { dt = JSON.parse(dt); } catch { dt = {}; }
+        }
+        if (dt && dt.estimasi_hari !== undefined && dt.estimasi_hari !== '' && dt.estimasi_hari !== null) {
+            const days = parseInt(dt.estimasi_hari, 10);
+            if (isNaN(days) || days < 0 || days > 1000) {
+                return NextResponse.json(
+                    { error: 'Estimasi hari pengerjaan harus antara 0 sampai 1000 hari.' },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // Validate timeline_kerja duration (max 50 days per step)
+        let tk = body.timeline_kerja;
+        if (typeof tk === 'string') {
+            try { tk = JSON.parse(tk); } catch { tk = []; }
+        }
+        if (Array.isArray(tk)) {
+            for (const task of tk) {
+                if (task.durasi !== undefined && task.durasi !== '' && task.durasi !== null) {
+                    const d = parseInt(task.durasi, 10);
+                    if (isNaN(d) || d < 0 || d > 50) {
+                        return NextResponse.json(
+                            { error: `Durasi tahap "${task.tugas || 'Timeline'}" harus antara 0 sampai 50 hari.` },
+                            { status: 400 }
+                        );
+                    }
+                }
+            }
+        }
 
         const existing = db.prepare('SELECT * FROM work_orders WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Work order not found' }, { status: 404 });

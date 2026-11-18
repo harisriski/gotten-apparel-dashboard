@@ -1,6 +1,7 @@
 import styles from '../../landing.module.css';
 import { SIZE_FEES, BONUS_EXAMPLES } from './data';
 import ModelShowcase from './ModelShowcase';
+import SizeChart from './SizeChart';
 
 export default function Pricing() {
   return (
@@ -96,6 +97,9 @@ export default function Pricing() {
               </ul>
             </div>
           </div>
+
+          {/* Interactive Official Size Chart (Dewasa & Anak) */}
+          <SizeChart />
         </div>
       </div>
     </section>
