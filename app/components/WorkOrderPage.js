@@ -105,17 +105,6 @@ export default function WorkOrderPage({ onAdd, onEdit, onView }) {
         return parts.join(' ');
     }, [selectedYear, selectedMonth, selectedDay]);
 
-    async function handleDelete(wo) {
-        if (!confirm(`Hapus Work Order ${wo.wo_number} (${wo.customer || wo.team_name})?`)) return;
-        try {
-            await fetch(`/api/work-orders?id=${wo.id}`, { method: 'DELETE' });
-            fetchWorkOrders();
-            fetchAvailableYears();
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
     return (
         <div className="page-content">
             {/* Top Bar: Title & Primary CTA */}
@@ -140,7 +129,7 @@ export default function WorkOrderPage({ onAdd, onEdit, onView }) {
                         <span className="material-icons-round" style={{ color: '#3b82f6', fontSize: '1.6rem' }}>
                             assignment
                         </span>
-                        Work Order Jersey
+                        Work Order
                     </h2>
                     <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)' }}>
                         Kelola lembar SPK produksi, spesifikasi kain, pola, jadwal timeline, dan cetak dokumen lapangan.
@@ -396,7 +385,7 @@ export default function WorkOrderPage({ onAdd, onEdit, onView }) {
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                         {hasActiveFilter
                             ? 'Tidak ada Work Order pada periode / filter yang dipilih'
-                            : 'Belum ada Work Order Jersey'}
+                            : 'Belum ada Work Order'}
                     </h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '460px', margin: '0.5rem auto 1.25rem', lineHeight: 1.5 }}>
                         {hasActiveFilter
@@ -494,21 +483,6 @@ export default function WorkOrderPage({ onAdd, onEdit, onView }) {
                                                 title="Edit Work Order"
                                             >
                                                 <span className="material-icons-round" style={{ fontSize: '1rem' }}>edit</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(wo)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    borderRadius: '6px',
-                                                    padding: '0.35rem 0.55rem',
-                                                    color: '#ef4444',
-                                                    cursor: 'pointer'
-                                                }}
-                                                title="Hapus Work Order"
-                                            >
-                                                <span className="material-icons-round" style={{ fontSize: '1rem' }}>delete</span>
                                             </button>
                                         </div>
                                     </div>

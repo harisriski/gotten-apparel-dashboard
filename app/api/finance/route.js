@@ -327,7 +327,37 @@ export async function PUT(request) {
                     txType
                 );
 
-                db.prepare("UPDATE orders SET pelunasan = ? WHERE id = ?").run(updatedPelunasan, existing.order_id);
+                // Jika pesanan sebelumnya memiliki piutang yang diikhlaskan, kurangi otomatis (Skenario A)
+                const currentDiikhlaskan = order ? (parseInt(order.piutang_diikhlaskan, 10) || 0) : 0;
+                let updatedDiikhlaskan = currentDiikhlaskan;
+                let settlementLogs = [];
+                try {
+                    settlementLogs = JSON.parse(order.settlement_logs || '[]');
+                    if (!Array.isArray(settlementLogs)) settlementLogs = [];
+                } catch {
+                    settlementLogs = [];
+                }
+
+                if (currentDiikhlaskan > 0) {
+                    updatedDiikhlaskan = Math.max(0, currentDiikhlaskan - newPayment);
+                    settlementLogs.push({
+                        id: Date.now(),
+                        action: 'pembayaran_susulan',
+                        label: 'Pembayaran Susulan Diterima',
+                        amount: newPayment,
+                        new_diikhlaskan: updatedDiikhlaskan,
+                        reason: `Pembayaran susulan diterima Rp ${newPayment.toLocaleString('id-ID')}. Sisa piutang diikhlaskan otomatis disesuaikan menjadi Rp ${updatedDiikhlaskan.toLocaleString('id-ID')}.`,
+                        date: body.date ?? new Date().toISOString().split('T')[0],
+                        timestamp: new Date().toISOString()
+                    });
+                }
+
+                db.prepare("UPDATE orders SET pelunasan = ?, piutang_diikhlaskan = ?, settlement_logs = ? WHERE id = ?").run(
+                    updatedPelunasan,
+                    updatedDiikhlaskan,
+                    JSON.stringify(settlementLogs),
+                    existing.order_id
+                );
             }
 
             const updated = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);

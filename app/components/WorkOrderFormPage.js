@@ -658,7 +658,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                     Kembali
                 </button>
                 <h2 className="form-page-title" style={{ margin: 0 }}>
-                    {isEdit ? '✏️ Edit Work Order Jersey' : '📋 Buat Work Order Jersey Baru'}
+                    {isEdit ? '✏️ Edit Work Order' : '📋 Buat Work Order Baru'}
                 </h2>
                 {isEdit && (
                     <button
@@ -700,7 +700,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
             )}
 
             <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '100%' }}>
-                
+
                 {/* ── CARD 1: Informasi Pesanan & Tim (Read Only) ── */}
                 <div className="form-page-card" style={{ marginBottom: '1.5rem', maxWidth: '100%', width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -764,7 +764,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                         <div>
                             <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <span className="material-icons-round" style={{ color: '#10b981' }}>palette</span>
-                                Desain ACC (Multiple Jersey Mockup)
+                                Desain ACC (Multiple Mockup)
                             </h3>
                             <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted, #64748b)' }}>
                                 Masukkan judul desain (Pemain, Kiper, Official, dll.) dan upload file desain/mockup fix yang sudah di-ACC customer.
@@ -1651,7 +1651,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                             <span className="material-icons-round" style={{ fontSize: '1.35rem' }}>schedule</span>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em' }}>
-                                    Timeline Kerja Jersey
+                                    Timeline Kerja
                                 </h3>
                                 <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>
                                     Jadwal alur produksi otomatis berurutan (Mulai + Durasi Hari = Selesai)

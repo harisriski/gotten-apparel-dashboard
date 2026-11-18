@@ -69,11 +69,17 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ error: 'Down Payment (DP) tidak boleh minus dan maksimal 15 digit.' }, { status: 400 });
         }
 
+        const nextStatus = body.status ?? existing.status;
+        let nextTanggalSelesai = existing.tanggal_selesai;
+        if ((nextStatus === 'selesai' || nextStatus === 'dikirim') && !existing.tanggal_selesai) {
+            nextTanggalSelesai = new Date().toISOString().split('T')[0];
+        }
+
         const stmt = db.prepare(`
             UPDATE orders SET 
                 customer=?, product=?, qty=?, price=?, status=?, deadline=?,
                 tanggal=?, company=?, email=?, phone=?, address=?, items=?, subtotal=?, potongan=?, dp=?,
-                shipping_cost=?, shipping_term=?, shipping_method=?, shipping_date=?
+                shipping_cost=?, shipping_term=?, shipping_method=?, shipping_date=?, tanggal_selesai=?
             WHERE id=?
         `);
 
@@ -97,6 +103,7 @@ export async function PUT(request, { params }) {
             body.shipping_term ?? existing.shipping_term,
             body.shipping_method ?? existing.shipping_method,
             body.shipping_date ?? existing.shipping_date,
+            nextTanggalSelesai,
             id
         );
 

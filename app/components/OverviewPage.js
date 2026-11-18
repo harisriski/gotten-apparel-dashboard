@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 
 function formatCurrency(num) {
-    return 'Rp ' + num.toLocaleString('id-ID');
+    return 'Rp ' + (num || 0).toLocaleString('id-ID');
 }
 
 function formatDate(dateStr) {
@@ -311,17 +311,17 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                 </div>
             </div>
 
-            {/* Financial KPI Grid */}
+            {/* Financial KPI Grid (Arus Kas) */}
             <div className="kpi-grid">
                 <div className="kpi-card" style={{ '--accent': '#34d399' }}>
                     <div className="kpi-icon" style={{ background: 'rgba(52,211,153,0.1)' }}>
                         <span className="material-icons-round" style={{ color: '#34d399' }}>trending_up</span>
                     </div>
                     <div className="kpi-content">
-                        <span className="kpi-label">Total Pemasukan</span>
+                        <span className="kpi-label">Total Pemasukan Kas</span>
                         <span className="kpi-value"><AnimatedValue target={finData.summary.totalIn} prefix="Rp " /></span>
                         <span className="kpi-change positive">
-                            <span className="material-icons-round">trending_up</span>+12% dari bulan lalu
+                            <span className="material-icons-round">trending_up</span>Penerimaan riil kas
                         </span>
                     </div>
                 </div>
@@ -330,10 +330,10 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                         <span className="material-icons-round" style={{ color: '#f87171' }}>trending_down</span>
                     </div>
                     <div className="kpi-content">
-                        <span className="kpi-label">Total Pengeluaran</span>
+                        <span className="kpi-label">Total Pengeluaran Kas</span>
                         <span className="kpi-value"><AnimatedValue target={finData.summary.totalOut} prefix="Rp " /></span>
                         <span className="kpi-change negative">
-                            <span className="material-icons-round">warning</span>Kontrol pengeluaran
+                            <span className="material-icons-round">warning</span>Biaya operasional &amp; HPP
                         </span>
                     </div>
                 </div>
@@ -342,10 +342,10 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                         <span className="material-icons-round" style={{ color: '#a78bfa' }}>account_balance</span>
                     </div>
                     <div className="kpi-content">
-                        <span className="kpi-label">Saldo / Profit</span>
+                        <span className="kpi-label">Saldo Kas Bersih</span>
                         <span className="kpi-value"><AnimatedValue target={profit} prefix="Rp " /></span>
                         <span className="kpi-change positive">
-                            <span className="material-icons-round">analytics</span>Margin {profitMargin}%
+                            <span className="material-icons-round">analytics</span>Margin kas {profitMargin}%
                         </span>
                     </div>
                 </div>
@@ -354,62 +354,168 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                         <span className="material-icons-round" style={{ color: '#3b82f6' }}>receipt_long</span>
                     </div>
                     <div className="kpi-content">
-                        <span className="kpi-label">Total Pesanan</span>
-                        <span className="kpi-value"><AnimatedValue target={data.kpi.totalOrders} /></span>
+                        <span className="kpi-label">Nilai Kontrak Pesanan</span>
+                        <span className="kpi-value"><AnimatedValue target={data.kpi.totalRevenue} prefix="Rp " /></span>
                         <span className="kpi-change positive">
-                            <span className="material-icons-round">trending_up</span>{data.kpi.activeOrders} aktif
+                            <span className="material-icons-round">receipt</span>{data.kpi.totalOrders} pesanan ({data.kpi.activeOrders} aktif)
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Order Profit/Loss KPI Row */}
+            {/* Analisa Piutang & Penyelesaian Tagihan */}
+            <div style={{
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-color)',
+                padding: '1.25rem',
+                marginBottom: '1.5rem',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span className="material-icons-round" style={{ color: '#3b82f6', fontSize: '1.2rem' }}>account_balance_wallet</span>
+                        Status Piutang &amp; Penyelesaian Tagihan Pelanggan
+                    </h3>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Berdasarkan periode filter terpilih
+                    </span>
+                </div>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                    gap: '1rem'
+                }}>
+                    {/* Kartu 1: Piutang Diikhlaskan */}
+                    <div style={{
+                        background: 'rgba(59, 130, 246, 0.06)',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        borderRadius: '10px',
+                        padding: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>handshake</span>
+                                Piutang Diikhlaskan
+                            </span>
+                            <span style={{ fontSize: '0.72rem', background: '#3b82f6', color: '#fff', padding: '0.15rem 0.5rem', borderRadius: '999px', fontWeight: 700 }}>
+                                {data.kpi.diikhlaskanCount || 0} Proyek
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            <AnimatedValue target={data.kpi.totalPiutangDiikhlaskan || 0} prefix="Rp " />
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                            Tagihan ditutup karena kesepakatan customer melunasi semampunya.
+                        </div>
+                    </div>
+
+                    {/* Kartu 2: Piutang Macet (> 30 Hari) */}
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.06)',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        borderRadius: '10px',
+                        padding: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>error_outline</span>
+                                Piutang Macet (&gt; 30 Hari)
+                            </span>
+                            <span style={{ fontSize: '0.72rem', background: '#ef4444', color: '#fff', padding: '0.15rem 0.5rem', borderRadius: '999px', fontWeight: 700 }}>
+                                {data.kpi.macetCount || 0} Proyek
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444' }}>
+                            <AnimatedValue target={data.kpi.totalPiutangMacet || 0} prefix="Rp " />
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                            Belum lunas lewat 30 hari dari tanggal selesai / deadline pengerjaan.
+                        </div>
+                    </div>
+
+                    {/* Kartu 3: Sisa Piutang Berjalan */}
+                    <div style={{
+                        background: 'rgba(245, 158, 11, 0.06)',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                        borderRadius: '10px',
+                        padding: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>hourglass_empty</span>
+                                Piutang Berjalan (Normal)
+                            </span>
+                            <span style={{ fontSize: '0.72rem', background: '#d97706', color: '#fff', padding: '0.15rem 0.5rem', borderRadius: '999px', fontWeight: 700 }}>
+                                {data.kpi.belumLunasCount || 0} Proyek
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            <AnimatedValue target={data.kpi.totalBelumLunas || 0} prefix="Rp " />
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                            Tagihan aktif dalam termin pengerjaan normal (&le; 30 hari).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Order Profit/Loss KPI Row (Target vs Realisasi) */}
             {ops.orderCount > 0 && (
                 <div className="kpi-grid" style={{ marginTop: '0' }}>
-                    <div className="kpi-card" style={{ '--accent': ops.totalLabaBersih >= 0 ? '#34d399' : '#f87171' }}>
-                        <div className="kpi-icon" style={{ background: ops.totalLabaBersih >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)' }}>
-                            <span className="material-icons-round" style={{ color: ops.totalLabaBersih >= 0 ? '#34d399' : '#f87171' }}>analytics</span>
+                    <div className="kpi-card" style={{ '--accent': (ops.totalLabaBersihRealisasi ?? ops.totalLabaBersih) >= 0 ? '#34d399' : '#f87171' }}>
+                        <div className="kpi-icon" style={{ background: (ops.totalLabaBersihRealisasi ?? ops.totalLabaBersih) >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)' }}>
+                            <span className="material-icons-round" style={{ color: (ops.totalLabaBersihRealisasi ?? ops.totalLabaBersih) >= 0 ? '#34d399' : '#f87171' }}>analytics</span>
                         </div>
                         <div className="kpi-content">
-                            <span className="kpi-label">Laba Bersih Pesanan</span>
-                            <span className="kpi-value"><AnimatedValue target={ops.totalLabaBersih} prefix="Rp " /></span>
-                            <span className={`kpi-change ${ops.totalLabaBersih >= 0 ? 'positive' : 'negative'}`}>
-                                <span className="material-icons-round">{ops.totalLabaBersih >= 0 ? 'trending_up' : 'trending_down'}</span>
-                                {ops.orderCount} pesanan dihitung
+                            <span className="kpi-label">Laba Bersih Realisasi</span>
+                            <span className="kpi-value"><AnimatedValue target={ops.totalLabaBersihRealisasi ?? ops.totalLabaBersih} prefix="Rp " /></span>
+                            <span className="kpi-change positive" style={{ fontSize: '0.73rem', marginTop: '0.2rem' }}>
+                                Target: {formatCurrency(ops.totalLabaBersih)} {ops.totalDiikhlaskan > 0 && `(-${formatCurrency(ops.totalDiikhlaskan)})`}
                             </span>
                         </div>
                     </div>
+
                     <div className="kpi-card" style={{ '--accent': '#f59e0b' }}>
                         <div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)' }}>
                             <span className="material-icons-round" style={{ color: '#f59e0b' }}>inventory_2</span>
                         </div>
                         <div className="kpi-content">
-                            <span className="kpi-label">Total HPP</span>
+                            <span className="kpi-label">Total HPP Proyek</span>
                             <span className="kpi-value"><AnimatedValue target={ops.totalHpp} prefix="Rp " /></span>
                             <span className="kpi-change negative">
-                                <span className="material-icons-round">shopping_cart</span>Harga Pokok Produksi
+                                <span className="material-icons-round">shopping_cart</span>{ops.orderCount} pesanan dihitung
                             </span>
                         </div>
                     </div>
+
                     <div className="kpi-card" style={{ '--accent': '#3b82f6' }}>
                         <div className="kpi-icon" style={{ background: 'rgba(59,130,246,0.1)' }}>
                             <span className="material-icons-round" style={{ color: '#3b82f6' }}>percent</span>
                         </div>
                         <div className="kpi-content">
-                            <span className="kpi-label">Rata-rata Margin</span>
-                            <span className="kpi-value">{ops.avgMargin}%</span>
-                            <span className={`kpi-change ${ops.avgMargin >= 30 ? 'positive' : 'negative'}`}>
-                                <span className="material-icons-round">{ops.avgMargin >= 30 ? 'thumb_up' : 'info'}</span>
-                                {ops.avgMargin >= 30 ? 'Margin sehat' : 'Perlu perhatian'}
+                            <span className="kpi-label">Margin Realisasi</span>
+                            <span className="kpi-value">{ops.avgMarginRealisasi ?? ops.avgMargin}%</span>
+                            <span className="kpi-change positive" style={{ fontSize: '0.73rem', marginTop: '0.2rem' }}>
+                                Target: {ops.avgMargin}% ({ops.avgMarginRealisasi < ops.avgMargin ? `gap ${(ops.avgMargin - ops.avgMarginRealisasi).toFixed(1)}%` : 'Tercapai'})
                             </span>
                         </div>
                     </div>
+
                     <div className="kpi-card" style={{ '--accent': '#10b981' }}>
                         <div className="kpi-icon" style={{ background: 'rgba(16,185,129,0.1)' }}>
                             <span className="material-icons-round" style={{ color: '#10b981' }}>check_circle</span>
                         </div>
                         <div className="kpi-content">
-                            <span className="kpi-label">Status Lunas</span>
+                            <span className="kpi-label">Status Pelunasan</span>
                             <span className="kpi-value">{ops.lunasCount}/{ops.orderCount}</span>
                             <span className="kpi-change positive">
                                 <span className="material-icons-round">payments</span>

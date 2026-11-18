@@ -7,7 +7,7 @@ const pageTitles = {
     orders: { title: 'Pesanan', subtitle: 'Kelola pesanan dan lacak status pembayaran.' },
     finance: { title: 'Arus Kas', subtitle: 'Pantau pemasukan, pengeluaran, dan profit bisnis Anda.' },
     customers: { title: 'Pelanggan', subtitle: 'Data pelanggan dan riwayat transaksi.' },
-    production: { title: 'Produksi', subtitle: 'Pantau pipeline produksi dari desain hingga packing.' },
+    production: { title: 'Work Order', subtitle: 'Kelola lembar SPK produksi, spesifikasi, jadwal timeline, dan cetak dokumen lapangan.' },
     inventory: { title: 'Inventaris', subtitle: 'Kelola stok bahan baku dan produk jadi.' },
 };
 

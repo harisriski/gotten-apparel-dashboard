@@ -105,13 +105,18 @@ export async function POST(request) {
         }
         const newId = `GTN-${String(nextNum).padStart(4, '0')}`;
 
+        const initialStatus = body.status || 'baru';
+        const initialTanggalSelesai = (initialStatus === 'selesai' || initialStatus === 'dikirim')
+            ? new Date().toISOString().split('T')[0]
+            : null;
+
         const stmt = db.prepare(`
             INSERT INTO orders (
                 id, customer, product, qty, price, status, deadline,
                 tanggal, company, email, phone, address, items, subtotal, potongan, dp, shipping_cost,
-                shipping_term, shipping_method, shipping_date
+                shipping_term, shipping_method, shipping_date, tanggal_selesai
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         stmt.run(
@@ -120,7 +125,7 @@ export async function POST(request) {
             body.product,
             body.qty,
             body.price,
-            body.status || 'baru',
+            initialStatus,
             body.deadline || '',
             body.tanggal || '',
             body.company || '',
@@ -134,7 +139,8 @@ export async function POST(request) {
             body.shipping_cost || 0,
             body.shipping_term || '',
             body.shipping_method || '',
-            body.shipping_date || ''
+            body.shipping_date || '',
+            initialTanggalSelesai
         );
 
         // Auto-create DP transaction if DP > 0

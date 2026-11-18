@@ -1,5 +1,6 @@
 import getDb from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getOrderPaymentStatus } from '@/lib/paymentStatus';
 
 export async function GET(request) {
     try {
@@ -25,6 +26,32 @@ export async function GET(request) {
         const completedOrders = db.prepare(`SELECT COUNT(*) as count FROM orders WHERE status IN ('selesai', 'dikirim')${dateFilter}`).get(...dateParams).count;
         const recentOrders = db.prepare(`SELECT * FROM orders WHERE 1=1${dateFilter} ORDER BY COALESCE(NULLIF(tanggal, ''), created_at) DESC LIMIT 6`).all(...dateParams);
         const statusCounts = db.prepare(`SELECT status, COUNT(*) as count FROM orders WHERE 1=1${dateFilter} GROUP BY status`).all(...dateParams);
+
+        // Analisa Status Piutang & Pembayaran untuk seluruh pesanan dalam filter periode
+        const allOrdersInPeriod = db.prepare(`SELECT * FROM orders WHERE 1=1${dateFilter}`).all(...dateParams);
+        let totalPiutangDiikhlaskan = 0;
+        let diikhlaskanCount = 0;
+        let totalPiutangMacet = 0;
+        let macetCount = 0;
+        let totalBelumLunas = 0;
+        let belumLunasCount = 0;
+        let lunasPeriodCount = 0;
+
+        for (const o of allOrdersInPeriod) {
+            const payStatus = getOrderPaymentStatus(o);
+            if (payStatus.status === 'diikhlaskan') {
+                totalPiutangDiikhlaskan += payStatus.diikhlaskan;
+                diikhlaskanCount++;
+            } else if (payStatus.status === 'macet') {
+                totalPiutangMacet += payStatus.sisa;
+                macetCount++;
+            } else if (payStatus.status === 'belum_lunas') {
+                totalBelumLunas += payStatus.sisa;
+                belumLunasCount++;
+            } else if (payStatus.status === 'lunas') {
+                lunasPeriodCount++;
+            }
+        }
 
         // Transaction-based for chart (DP is now stored directly in transactions table)
         let txFilter = '';
@@ -62,17 +89,18 @@ export async function GET(request) {
             };
         });
 
-        // ── Order Profit/Loss Summary ──────────────────────────────────────
+        // ── Order Profit/Loss Summary (Target vs Realisasi) ──────────────────
         const orderHppRows = db.prepare(`
             SELECT DISTINCT t.order_id
             FROM transactions t
             WHERE t.order_id IS NOT NULL AND t.category_group = 'HPP' AND t.amount_out > 0
         `).all();
 
-        let totalLabaBersih = 0;
+        let totalLabaBersihTarget = 0;
+        let totalLabaBersihRealisasi = 0;
         let totalHppAll = 0;
         let totalHargaPesanan = 0;
-        let lunasCount = 0;
+        let totalDiikhlaskanProfit = 0;
         const orderProfitData = [];
 
         for (const row of orderHppRows) {
@@ -87,38 +115,65 @@ export async function GET(request) {
                 .filter(t => t.category_group === 'HPP')
                 .reduce((sum, t) => sum + (t.amount_out || 0), 0);
 
-            const totalIncomeOrder = orderTxs
-                .reduce((sum, t) => sum + (t.amount_in || 0), 0);
+            const payStatus = getOrderPaymentStatus(order);
+            const orderPrice = order.price || 0;
+            const diikhlaskan = payStatus.diikhlaskan || 0;
+            const realPrice = Math.max(0, orderPrice - diikhlaskan);
 
-            const labaBersih = (order.price || 0) - totalHpp;
-            const margin = order.price > 0 ? (labaBersih / order.price) * 100 : 0;
-            const isLunas = totalIncomeOrder >= (order.price || 0);
+            const labaTarget = orderPrice - totalHpp;
+            const marginTarget = orderPrice > 0 ? (labaTarget / orderPrice) * 100 : 0;
 
-            totalLabaBersih += labaBersih;
+            const labaRealisasi = realPrice - totalHpp;
+            const marginRealisasi = realPrice > 0 ? (labaRealisasi / realPrice) * 100 : 0;
+
+            totalLabaBersihTarget += labaTarget;
+            totalLabaBersihRealisasi += labaRealisasi;
             totalHppAll += totalHpp;
-            totalHargaPesanan += (order.price || 0);
-            if (isLunas) lunasCount++;
+            totalHargaPesanan += orderPrice;
+            totalDiikhlaskanProfit += diikhlaskan;
 
             orderProfitData.push({
                 order_id: order.id,
                 customer: order.customer,
                 product: order.product,
-                totalHarga: order.price || 0,
+                totalHarga: orderPrice,
+                diikhlaskan,
+                realPrice,
                 totalHpp,
-                labaBersih,
-                margin: Math.round(margin * 10) / 10,
-                isLunas,
+                labaBersih: labaTarget,
+                labaRealisasi,
+                margin: Math.round(marginTarget * 10) / 10,
+                marginRealisasi: Math.round(marginRealisasi * 10) / 10,
+                paymentStatus: payStatus.status,
+                paymentLabel: payStatus.label,
+                isLunas: payStatus.isLunas,
+                isDiikhlaskan: payStatus.isDiikhlaskan,
+                isMacet: payStatus.isMacet,
+                sisaTagihan: payStatus.sisa
             });
         }
 
-        const avgMargin = totalHargaPesanan > 0
-            ? Math.round((totalLabaBersih / totalHargaPesanan) * 1000) / 10
+        const avgMarginTarget = totalHargaPesanan > 0
+            ? Math.round((totalLabaBersihTarget / totalHargaPesanan) * 1000) / 10
+            : 0;
+
+        const totalRealisasiAll = Math.max(0, totalHargaPesanan - totalDiikhlaskanProfit);
+        const avgMarginRealisasi = totalRealisasiAll > 0
+            ? Math.round((totalLabaBersihRealisasi / totalRealisasiAll) * 1000) / 10
             : 0;
 
         return NextResponse.json({
             kpi: {
                 totalOrders,
                 totalRevenue,
+                totalRevenueRealisasi: Math.max(0, totalRevenue - totalPiutangDiikhlaskan),
+                totalPiutangDiikhlaskan,
+                diikhlaskanCount,
+                totalPiutangMacet,
+                macetCount,
+                totalBelumLunas,
+                belumLunasCount,
+                lunasPeriodCount,
                 activeOrders,
                 completedOrders,
                 totalIn,
@@ -130,12 +185,14 @@ export async function GET(request) {
             statusCounts: statusCounts.reduce((acc, s) => { acc[s.status] = s.count; return acc; }, {}),
             monthlyRevenue,
             orderProfitSummary: {
-                totalLabaBersih,
+                totalLabaBersih: totalLabaBersihTarget,
+                totalLabaBersihRealisasi,
                 totalHpp: totalHppAll,
                 totalHargaPesanan,
-                avgMargin,
+                totalDiikhlaskan: totalDiikhlaskanProfit,
+                avgMargin: avgMarginTarget,
+                avgMarginRealisasi,
                 orderCount: orderHppRows.length,
-                lunasCount,
             },
             orderProfitData,
         });

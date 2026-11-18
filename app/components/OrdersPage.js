@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-
-function formatCurrency(num) {
-    return 'Rp ' + (num || 0).toLocaleString('id-ID');
-}
+import { getOrderPaymentStatus, formatCurrency } from '@/lib/paymentStatus';
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
@@ -32,6 +29,7 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
     const [filter, setFilter] = useState('all');
     const [filterYear, setFilterYear] = useState('');
     const [filterMonth, setFilterMonth] = useState('');
+    const [filterPayment, setFilterPayment] = useState('');
     const [localSearch, setLocalSearch] = useState('');
 
     const currentYear = new Date().getFullYear();
@@ -83,9 +81,10 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
         setLocalSearch('');
         setFilterYear('');
         setFilterMonth('');
+        setFilterPayment('');
     }
 
-    const hasActiveFilter = Boolean((filter && filter !== 'all') || localSearch || filterYear || filterMonth);
+    const hasActiveFilter = Boolean((filter && filter !== 'all') || localSearch || filterYear || filterMonth || filterPayment);
 
     const activePeriodLabel = useMemo(() => {
         const parts = [];
@@ -97,13 +96,21 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
         return parts.join(' ');
     }, [filterYear, filterMonth]);
 
+    const displayedOrders = useMemo(() => {
+        if (!filterPayment) return orders;
+        return orders.filter(o => {
+            const payStatus = getOrderPaymentStatus(o);
+            return payStatus.status === filterPayment;
+        });
+    }, [orders, filterPayment]);
+
     const totalRevenue = useMemo(() => {
-        return orders.reduce((sum, o) => sum + (parseInt(o.price) || 0), 0);
-    }, [orders]);
+        return displayedOrders.reduce((sum, o) => sum + (parseInt(o.price) || 0), 0);
+    }, [displayedOrders]);
 
     const totalQty = useMemo(() => {
-        return orders.reduce((sum, o) => sum + (parseInt(o.qty) || 0), 0);
-    }, [orders]);
+        return displayedOrders.reduce((sum, o) => sum + (parseInt(o.qty) || 0), 0);
+    }, [displayedOrders]);
 
     async function handleDelete(orderId) {
         if (!confirm(`Hapus pesanan ${orderId}?`)) return;
@@ -279,6 +286,35 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                     </select>
                 </div>
 
+                {/* Filter Status Pembayaran */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span className="material-icons-round" style={{ fontSize: '1.15rem', color: 'var(--text-secondary)' }}>
+                        payments
+                    </span>
+                    <select
+                        className="form-select"
+                        value={filterPayment}
+                        onChange={e => setFilterPayment(e.target.value)}
+                        style={{
+                            height: '38px',
+                            fontSize: '0.85rem',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            minWidth: '170px',
+                            fontWeight: filterPayment ? 700 : 500
+                        }}
+                    >
+                        <option value="">Semua Pembayaran</option>
+                        <option value="lunas">🟢 Lunas Penuh</option>
+                        <option value="diikhlaskan">🔵 Lunas (Diikhlaskan)</option>
+                        <option value="belum_lunas">🟡 Belum Lunas</option>
+                        <option value="macet">🔴 Piutang Macet (&gt; 30 Hari)</option>
+                    </select>
+                </div>
+
                 {/* Reset Filter Button */}
                 {hasActiveFilter && (
                     <button
@@ -326,7 +362,7 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                         analytics
                     </span>
                     <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                        Menampilkan <strong>{orders.length}</strong> Pesanan
+                        Menampilkan <strong>{displayedOrders.length}</strong> Pesanan
                     </span>
 
                     {filter !== 'all' && (
@@ -340,6 +376,20 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                             fontWeight: 700
                         }}>
                             Status: {getStatusLabel(filter)}
+                        </span>
+                    )}
+
+                    {filterPayment && (
+                        <span style={{
+                            background: filterPayment === 'lunas' ? 'rgba(16, 185, 129, 0.15)' : filterPayment === 'diikhlaskan' ? 'rgba(59, 130, 246, 0.15)' : filterPayment === 'macet' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                            color: filterPayment === 'lunas' ? '#10b981' : filterPayment === 'diikhlaskan' ? '#3b82f6' : filterPayment === 'macet' ? '#ef4444' : '#f59e0b',
+                            border: '1px solid currentColor',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700
+                        }}>
+                            Bayar: {filterPayment === 'lunas' ? 'Lunas Penuh' : filterPayment === 'diikhlaskan' ? 'Diikhlaskan' : filterPayment === 'macet' ? 'Piutang Macet' : 'Belum Lunas'}
                         </span>
                     )}
 
@@ -410,7 +460,7 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                                 [1, 2, 3, 4, 5].map(i => (
                                     <tr key={i}><td colSpan={9}><div className="skeleton skeleton-row" /></td></tr>
                                 ))
-                            ) : orders.length === 0 ? (
+                            ) : displayedOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={9} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-secondary)' }}>
                                         <span className="material-icons-round" style={{ fontSize: '3rem', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>
@@ -420,16 +470,14 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                                             {hasActiveFilter ? 'Tidak ada pesanan pada filter yang dipilih' : 'Belum ada data pesanan'}
                                         </div>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                            {hasActiveFilter ? 'Silakan coba ubah pilihan status, tahun, bulan, atau tekan Reset.' : 'Klik tombol Pesanan Baru di atas untuk membuat pesanan.'}
+                                            {hasActiveFilter ? 'Silakan coba ubah pilihan status, pembayaran, tahun, bulan, atau tekan Reset.' : 'Klik tombol Pesanan Baru di atas untuk membuat pesanan.'}
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map(o => {
-                                    const totalPaid = (parseInt(o.dp) || 0) + (parseInt(o.pelunasan) || 0);
-                                    const totalPrice = parseInt(o.price) || 0;
-                                    const sisa = Math.max(0, totalPrice - totalPaid);
-                                    const isLunas = totalPrice > 0 && totalPaid >= totalPrice;
+                                displayedOrders.map(o => {
+                                    const totalPrice = parseInt(o.price, 10) || 0;
+                                    const payStatus = getOrderPaymentStatus(o);
 
                                     return (
                                         <tr key={o.id}>
@@ -441,18 +489,58 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                                                 <strong style={{ fontSize: '0.9rem' }}>{formatCurrency(totalPrice)}</strong>
                                             </td>
                                             <td>
-                                                {isLunas ? (
+                                                {payStatus.status === 'lunas' ? (
                                                     <span className="status-badge selesai" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
                                                         <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>check_circle</span>
                                                         Lunas
                                                     </span>
+                                                ) : payStatus.status === 'diikhlaskan' ? (
+                                                    <div>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            color: '#3b82f6',
+                                                            background: 'rgba(59, 130, 246, 0.12)',
+                                                            padding: '0.2rem 0.5rem',
+                                                            borderRadius: '6px',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.25rem'
+                                                        }}>
+                                                            <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>handshake</span>
+                                                            Diikhlaskan
+                                                        </span>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                                                            Terbayar: {formatCurrency(payStatus.totalPaid)}
+                                                        </div>
+                                                    </div>
+                                                ) : payStatus.status === 'macet' ? (
+                                                    <div>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            color: '#ef4444',
+                                                            background: 'rgba(239, 68, 68, 0.12)',
+                                                            padding: '0.2rem 0.5rem',
+                                                            borderRadius: '6px',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.25rem'
+                                                        }}>
+                                                            <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>error_outline</span>
+                                                            Macet ({payStatus.daysLate} hr)
+                                                        </span>
+                                                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ef4444', marginTop: '0.2rem' }}>
+                                                            Sisa: {formatCurrency(payStatus.sisa)}
+                                                        </div>
+                                                    </div>
                                                 ) : (
                                                     <div>
                                                         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#eab308' }}>
-                                                            Sisa: {formatCurrency(sisa)}
+                                                            Sisa: {formatCurrency(payStatus.sisa)}
                                                         </div>
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                                            Terbayar: {formatCurrency(totalPaid)}
+                                                            Terbayar: {formatCurrency(payStatus.totalPaid)}
                                                         </div>
                                                     </div>
                                                 )}
