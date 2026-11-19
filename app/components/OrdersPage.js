@@ -113,7 +113,7 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
     }, [displayedOrders]);
 
     async function handleDelete(orderId) {
-        if (!confirm(`Hapus pesanan ${orderId}?`)) return;
+        if (!confirm(`Pindahkan pesanan "${orderId}" ke Tempat Sampah?\n\n(Catatan: Pesanan dapat dipulihkan kembali kapan saja di menu Tempat Sampah)`)) return;
         try {
             await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
             fetchOrders();

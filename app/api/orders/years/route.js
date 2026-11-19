@@ -12,6 +12,7 @@ export async function GET() {
             SELECT DISTINCT substr(COALESCE(NULLIF(tanggal, ''), created_at), 1, 4) as y 
             FROM orders 
             WHERE COALESCE(NULLIF(tanggal, ''), created_at) IS NOT NULL
+              AND deleted_at IS NULL
         `).all();
 
         for (const r of rows) {

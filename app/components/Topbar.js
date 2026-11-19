@@ -9,6 +9,7 @@ const pageTitles = {
     customers: { title: 'Pelanggan', subtitle: 'Data pelanggan dan riwayat transaksi.' },
     production: { title: 'Work Order', subtitle: 'Kelola lembar SPK produksi, spesifikasi, jadwal timeline, dan cetak dokumen lapangan.' },
     inventory: { title: 'Inventaris', subtitle: 'Kelola stok bahan baku dan produk jadi.' },
+    trash: { title: 'Tempat Sampah', subtitle: 'Kelola pesanan yang terhapus sementara. Anda dapat memulihkan (restore) atau menghapus permanen.' },
 };
 
 export default function Topbar({ activePage, onMenuToggle, onSearch }) {

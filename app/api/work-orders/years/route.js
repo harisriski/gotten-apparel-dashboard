@@ -9,7 +9,7 @@ export async function GET() {
         years.add(currentYear);
 
         // Fetch all created_at and data_transaksi to get unique years
-        const rows = db.prepare('SELECT created_at, data_transaksi FROM work_orders').all();
+        const rows = db.prepare('SELECT created_at, data_transaksi FROM work_orders WHERE deleted_at IS NULL').all();
         for (const r of rows) {
             if (r.created_at) {
                 const y = String(r.created_at).slice(0, 4);

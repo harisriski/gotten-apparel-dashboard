@@ -28,7 +28,12 @@ export default function Footer() {
               </li>
             ))}
             <li>
-              <Link href="/dashboard" style={{ color: '#10b981' }}>
+              <Link href="/lacak" style={{ color: '#059669', fontWeight: 600 }}>
+                Lacak Pesanan
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard" style={{ color: '#64748b' }}>
                 Dashboard Staff
               </Link>
             </li>

@@ -149,14 +149,30 @@ export async function DELETE(request, { params }) {
         const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
         if (!existing) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-        // Delete linked transactions (DP & Pelunasan) first
-        db.prepare('DELETE FROM transactions WHERE order_id = ?').run(id);
+        const customerName = existing.customer ? existing.customer.trim() : '';
 
-        // Delete linked work orders
-        db.prepare('DELETE FROM work_orders WHERE order_id = ?').run(id);
+        // Soft delete: tandai deleted_at pada transaksi, work order, dan pesanan
+        db.prepare("UPDATE transactions SET deleted_at = datetime('now') WHERE order_id = ?").run(id);
+        db.prepare("UPDATE work_orders SET deleted_at = datetime('now') WHERE order_id = ?").run(id);
+        db.prepare("UPDATE orders SET deleted_at = datetime('now') WHERE id = ?").run(id);
 
-        db.prepare('DELETE FROM orders WHERE id = ?').run(id);
-        return NextResponse.json({ message: 'Order deleted', id });
+        // Auto-cleanup customer: jika pelanggan tidak memiliki pesanan aktif lain, hapus dari tabel customers
+        if (customerName) {
+            const remaining = db.prepare(`
+                SELECT COUNT(*) as count 
+                FROM orders 
+                WHERE LOWER(TRIM(customer)) = LOWER(TRIM(?))
+                  AND deleted_at IS NULL
+            `).get(customerName);
+
+            if (!remaining || remaining.count === 0) {
+                db.prepare(`
+                    DELETE FROM customers 
+                    WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))
+                `).run(customerName);
+            }
+        }
+        return NextResponse.json({ message: 'Order moved to trash', id });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

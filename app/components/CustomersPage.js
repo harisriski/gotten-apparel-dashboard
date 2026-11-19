@@ -119,16 +119,6 @@ export default function CustomersPage({ onAdd, onEdit, onDetail }) {
         setSortBy('spent');
     }
 
-    async function handleDelete(customer) {
-        if (!confirm(`Hapus data kontak pelanggan "${customer.name}"? (Data riwayat pesanan tetap tersimpan di database)`)) return;
-        try {
-            await fetch(`/api/customers?id=${customer.id}`, { method: 'DELETE' });
-            fetchCustomers();
-        } catch (err) {
-            console.error('Delete customer error:', err);
-        }
-    }
-
     function getInitials(name) {
         if (!name) return '??';
         const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -177,27 +167,8 @@ export default function CustomersPage({ onAdd, onEdit, onDetail }) {
                         fontSize: '0.85rem',
                         color: 'var(--text-secondary)'
                     }}>
-                        Pantau pelanggan dengan order terbanyak, omzet belanja tertinggi, dan tentukan reward bulanan atau tahunan.
+                        Data pelanggan otomatis terhimpun dari pesanan. Pantau pelanggan dengan order terbanyak, omzet belanja tertinggi, dan riwayat pesanan.
                     </p>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <button
-                        onClick={onAdd}
-                        className="btn-primary"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            padding: '0.55rem 1rem',
-                            borderRadius: '8px',
-                            fontWeight: 600,
-                            fontSize: '0.875rem'
-                        }}
-                    >
-                        <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>person_add</span>
-                        Tambah Pelanggan Manual
-                    </button>
                 </div>
             </div>
 
@@ -854,15 +825,6 @@ export default function CustomersPage({ onAdd, onEdit, onDetail }) {
                                                             title="Edit data kontak"
                                                         >
                                                             <span className="material-icons-round" style={{ fontSize: '1.05rem' }}>edit</span>
-                                                        </button>
-
-                                                        <button
-                                                            className="action-btn"
-                                                            onClick={() => handleDelete(c)}
-                                                            title="Hapus kontak pelanggan"
-                                                            style={{ color: '#dc2626' }}
-                                                        >
-                                                            <span className="material-icons-round" style={{ fontSize: '1.05rem' }}>delete</span>
                                                         </button>
                                                     </div>
                                                 </td>

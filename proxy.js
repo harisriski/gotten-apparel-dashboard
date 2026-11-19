@@ -3,10 +3,13 @@ import { NextResponse } from 'next/server';
 export function proxy(request) {
     const { pathname } = request.nextUrl;
 
-    // Allow public landing page, login page, auth API routes, and static assets
+    // Allow public landing page, tracking page, login page, public tracking API, auth API routes, and static assets
     if (
         pathname === '/' ||
         pathname === '/login' ||
+        pathname === '/lacak' ||
+        pathname.startsWith('/lacak') ||
+        pathname.startsWith('/api/track') ||
         pathname.startsWith('/api/auth/') ||
         pathname.startsWith('/_next/') ||
         pathname.startsWith('/favicon') ||

@@ -61,18 +61,18 @@ export default function SizeChart() {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* Jersey Body Background Glow */}
+              {/* Jersey Body Background */}
               <defs>
                 <linearGradient id="jerseyGrad" x1="200" y1="40" x2="200" y2="385" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#1e293b" />
-                  <stop offset="1" stopColor="#0f172a" />
+                  <stop stopColor="#ffffff" />
+                  <stop offset="1" stopColor="#f1f5f9" />
                 </linearGradient>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop stopColor="#10b981" />
-                  <stop offset="1" stopColor="#38bdf8" />
+                  <stop offset="1" stopColor="#0284c7" />
                 </linearGradient>
                 <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#10b981" floodOpacity="0.25" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#059669" floodOpacity="0.15" />
                 </filter>
               </defs>
 
@@ -92,7 +92,7 @@ export default function SizeChart() {
                    L 235 44 
                    Q 200 56 165 44 Z"
                 fill="url(#jerseyGrad)"
-                stroke="#334155"
+                stroke="#cbd5e1"
                 strokeWidth="2.5"
                 strokeLinejoin="round"
               />
@@ -100,20 +100,20 @@ export default function SizeChart() {
               {/* Collar Back & V-Neck Detail */}
               <path
                 d="M 165 44 Q 200 56 235 44"
-                stroke="#475569"
+                stroke="#94a3b8"
                 strokeWidth="2"
                 fill="none"
               />
               <path
                 d="M 165 44 L 200 100 L 235 44"
-                stroke="#64748b"
+                stroke="#94a3b8"
                 strokeWidth="2.5"
-                fill="#0f172a"
+                fill="#f8fafc"
               />
 
               {/* Inner Seam Lines */}
-              <path d="M 120 160 L 80 85" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 3" />
-              <path d="M 280 160 L 320 85" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 3" />
+              <path d="M 120 160 L 80 85" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="3 3" />
+              <path d="M 280 160 L 320 85" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="3 3" />
 
               {/* ── MEASUREMENT LINE: LEBAR DADA (Horizontal) ── */}
               <g filter="url(#glowEffect)">
@@ -135,8 +135,8 @@ export default function SizeChart() {
               </g>
 
               {/* Badge Label Lebar Dada */}
-              <rect x="150" y="158" width="100" height="32" rx="6" fill="#0f172a" stroke="#10b981" strokeWidth="1.5" />
-              <text x="200" y="178" fill="#10b981" fontSize="11" fontWeight="800" textAnchor="middle" letterSpacing="0.08em">
+              <rect x="150" y="158" width="100" height="32" rx="6" fill="#ffffff" stroke="#10b981" strokeWidth="1.5" />
+              <text x="200" y="178" fill="#059669" fontSize="11" fontWeight="800" textAnchor="middle" letterSpacing="0.08em">
                 LEBAR DADA
               </text>
 
@@ -148,20 +148,20 @@ export default function SizeChart() {
                   y1="108"
                   x2="200"
                   y2="380"
-                  stroke="#38bdf8"
+                  stroke="#0284c7"
                   strokeWidth="2.5"
                   strokeDasharray="5 4"
                 />
                 {/* End Markers */}
-                <circle cx="200" cy="108" r="4" fill="#38bdf8" />
-                <circle cx="200" cy="380" r="4" fill="#38bdf8" />
-                <path d="M 195 114 L 200 108 L 205 114" stroke="#38bdf8" strokeWidth="2" fill="none" />
-                <path d="M 195 374 L 200 380 L 205 374" stroke="#38bdf8" strokeWidth="2" fill="none" />
+                <circle cx="200" cy="108" r="4" fill="#0284c7" />
+                <circle cx="200" cy="380" r="4" fill="#0284c7" />
+                <path d="M 195 114 L 200 108 L 205 114" stroke="#0284c7" strokeWidth="2" fill="none" />
+                <path d="M 195 374 L 200 380 L 205 374" stroke="#0284c7" strokeWidth="2" fill="none" />
               </g>
 
               {/* Badge Label Panjang Badan */}
-              <rect x="140" y="240" width="120" height="32" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.5" />
-              <text x="200" y="260" fill="#38bdf8" fontSize="11" fontWeight="800" textAnchor="middle" letterSpacing="0.08em">
+              <rect x="140" y="240" width="120" height="32" rx="6" fill="#ffffff" stroke="#0284c7" strokeWidth="1.5" />
+              <text x="200" y="260" fill="#0284c7" fontSize="11" fontWeight="800" textAnchor="middle" letterSpacing="0.08em">
                 PANJANG BADAN
               </text>
             </svg>
@@ -195,10 +195,10 @@ export default function SizeChart() {
                 {activeTab === 'dewasa' ? 'sports_kabaddi' : 'escalator_warning'}
               </span>
               <div>
-                <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#fff', fontWeight: 700 }}>
+                <h4 className={styles.tableCategoryTitle}>
                   {activeTab === 'dewasa' ? 'Tabel Ukuran Jersey Dewasa' : 'Tabel Ukuran Jersey Anak'}
                 </h4>
-                <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
+                <p className={styles.tableCategorySubtitle}>
                   {activeTab === 'dewasa'
                     ? 'Pola standar atletik Indonesia, nyaman untuk gerak aktif & tanding.'
                     : 'Pola khusus anak usia balita hingga remaja (2 s/d 13 tahun).'}

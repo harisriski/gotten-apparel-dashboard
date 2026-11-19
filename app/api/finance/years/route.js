@@ -11,7 +11,7 @@ export async function GET() {
         const rows = db.prepare(`
             SELECT DISTINCT substr(date, 1, 4) as y 
             FROM transactions 
-            WHERE date IS NOT NULL AND length(date) >= 4
+            WHERE date IS NOT NULL AND length(date) >= 4 AND deleted_at IS NULL
         `).all();
 
         for (const r of rows) {

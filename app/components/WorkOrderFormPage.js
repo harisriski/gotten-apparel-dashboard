@@ -658,7 +658,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                     Kembali
                 </button>
                 <h2 className="form-page-title" style={{ margin: 0 }}>
-                    {isEdit ? '✏️ Edit Work Order' : '📋 Buat Work Order Baru'}
+                    {isEdit ? 'Edit Work Order' : 'Buat Work Order Baru'}
                 </h2>
                 {isEdit && (
                     <button

@@ -34,18 +34,31 @@ export async function GET(request) {
         const month = searchParams.get('month');
         const day = searchParams.get('day');
 
-        let dateFilter = '';
+        let dateFilter = ' AND deleted_at IS NULL';
+        let tDateFilter = ' AND t.deleted_at IS NULL';
         const dateParams = [];
-        if (year) { dateFilter += " AND substr(date, 1, 4) = ?"; dateParams.push(year); }
-        if (month) { dateFilter += " AND substr(date, 6, 2) = ?"; dateParams.push(month.padStart(2, '0')); }
-        if (day) { dateFilter += " AND substr(date, 9, 2) = ?"; dateParams.push(day.padStart(2, '0')); }
+        if (year) { 
+            dateFilter += " AND substr(date, 1, 4) = ?"; 
+            tDateFilter += " AND substr(t.date, 1, 4) = ?"; 
+            dateParams.push(year); 
+        }
+        if (month) { 
+            dateFilter += " AND substr(date, 6, 2) = ?"; 
+            tDateFilter += " AND substr(t.date, 6, 2) = ?"; 
+            dateParams.push(month.padStart(2, '0')); 
+        }
+        if (day) { 
+            dateFilter += " AND substr(date, 9, 2) = ?"; 
+            tDateFilter += " AND substr(t.date, 9, 2) = ?"; 
+            dateParams.push(day.padStart(2, '0')); 
+        }
 
         const transactions = db.prepare(`
             SELECT t.*, o.customer AS order_customer, o.product AS order_product,
                    o.price AS order_price, o.dp AS order_dp, o.pelunasan AS order_pelunasan
             FROM transactions t
             LEFT JOIN orders o ON t.order_id = o.id
-            WHERE 1=1${dateFilter.replace(/date/g, 't.date')}
+            WHERE 1=1 ${tDateFilter}
             ORDER BY t.created_at DESC
         `).all(...dateParams);
 
@@ -111,7 +124,7 @@ export async function GET(request) {
         const orderProfitData = [];
         for (const row of orderHppRows) {
             const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(row.order_id);
-            if (!order) continue;
+            if (!order || order.deleted_at) continue;
 
             // All transactions linked to this order
             const orderTxs = db.prepare(`

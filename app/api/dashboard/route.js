@@ -9,7 +9,7 @@ export async function GET(request) {
         const year = searchParams.get('year');
         const month = searchParams.get('month');
 
-        let dateFilter = '';
+        let dateFilter = ' AND deleted_at IS NULL';
         const dateParams = [];
         if (year) { 
             dateFilter += " AND substr(COALESCE(NULLIF(tanggal, ''), created_at), 1, 4) = ?"; 
@@ -54,7 +54,7 @@ export async function GET(request) {
         }
 
         // Transaction-based for chart (DP is now stored directly in transactions table)
-        let txFilter = '';
+        let txFilter = ' AND deleted_at IS NULL';
         const txParams = [];
         if (year) { 
             txFilter += " AND substr(date, 1, 4) = ?"; 
@@ -105,7 +105,7 @@ export async function GET(request) {
 
         for (const row of orderHppRows) {
             const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(row.order_id);
-            if (!order) continue;
+            if (!order || order.deleted_at) continue;
 
             const orderTxs = db.prepare(`
                 SELECT * FROM transactions WHERE order_id = ? ORDER BY date ASC

@@ -15,7 +15,7 @@ export async function GET(request) {
             const orderCustomers = db.prepare(`
                 SELECT DISTINCT TRIM(customer) as name, company, phone, email, address, COALESCE(NULLIF(tanggal, ''), created_at) as created_at
                 FROM orders
-                WHERE customer IS NOT NULL AND TRIM(customer) != ''
+                WHERE customer IS NOT NULL AND TRIM(customer) != '' AND deleted_at IS NULL
             `).all();
 
             const checkStmt = db.prepare('SELECT id FROM customers WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1');
@@ -37,6 +37,13 @@ export async function GET(request) {
                     );
                 }
             }
+            // 1b. Bersihkan otomatis data pelanggan yang tidak lagi memiliki pesanan aktif sama sekali
+            db.prepare(`
+                DELETE FROM customers 
+                WHERE LOWER(TRIM(name)) NOT IN (
+                    SELECT LOWER(TRIM(customer)) FROM orders WHERE customer IS NOT NULL AND TRIM(customer) != '' AND deleted_at IS NULL
+                )
+            `).run();
         } catch (syncErr) {
             console.error('Customer auto-sync error:', syncErr);
         }
@@ -70,7 +77,7 @@ export async function GET(request) {
             ORDER BY c.name ASC
         `).all(...searchParamsList);
 
-        // 4. Enrich metrik pesanan tiap pelanggan pada periode terpilih
+        // 4. Enrich metrik pesanan tiap pelanggan pada periode terpilih (hanya pesanan aktif)
         const orderSummaryStmt = db.prepare(`
             SELECT 
                 COUNT(*) as orderCount,
@@ -78,7 +85,7 @@ export async function GET(request) {
                 COALESCE(SUM(price), 0) as totalSpent,
                 MAX(COALESCE(NULLIF(tanggal, ''), created_at)) as latestOrder
             FROM orders
-            WHERE LOWER(TRIM(customer)) = LOWER(TRIM(?)) ${orderDateFilterSql}
+            WHERE LOWER(TRIM(customer)) = LOWER(TRIM(?)) AND deleted_at IS NULL ${orderDateFilterSql}
         `);
 
         const orderListStmt = db.prepare(`
@@ -87,7 +94,7 @@ export async function GET(request) {
                 COALESCE(NULLIF(tanggal, ''), created_at) as tanggal, 
                 deadline, shipping_date
             FROM orders
-            WHERE LOWER(TRIM(customer)) = LOWER(TRIM(?)) ${orderDateFilterSql}
+            WHERE LOWER(TRIM(customer)) = LOWER(TRIM(?)) AND deleted_at IS NULL ${orderDateFilterSql}
             ORDER BY COALESCE(NULLIF(tanggal, ''), created_at) DESC
         `);
 

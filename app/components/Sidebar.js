@@ -29,6 +29,12 @@ export default function Sidebar({ activePage, onPageChange, isOpen, onClose }) {
                 { page: 'finance', icon: 'account_balance_wallet', label: 'Arus Kas' },
                 { page: 'customers', icon: 'groups', label: 'Pelanggan' },
             ]
+        },
+        {
+            label: 'Sistem',
+            items: [
+                { page: 'trash', icon: 'auto_delete', label: 'Tempat Sampah' },
+            ]
         }
     ];
 

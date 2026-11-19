@@ -12,7 +12,7 @@ export async function GET(request) {
         const day = searchParams.get('day');
 
         let query = 'SELECT * FROM work_orders';
-        const conditions = [];
+        const conditions = ['deleted_at IS NULL'];
         const params = [];
 
         if (orderId) {

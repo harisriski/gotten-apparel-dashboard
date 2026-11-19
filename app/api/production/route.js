@@ -13,15 +13,15 @@ export async function GET(request) {
 
         let dateFilter = '';
         const dateParams = [];
-        if (year || month) {
-            dateFilter = ' AND p.order_id IN (SELECT id FROM orders WHERE 1=1';
-            if (year) { dateFilter += " AND strftime('%Y', created_at) = ?"; dateParams.push(year); }
-            if (month) { dateFilter += " AND strftime('%m', created_at) = ?"; dateParams.push(month); }
-            dateFilter += ')';
-        }
+        if (year) { dateFilter += " AND strftime('%Y', created_at) = ?"; dateParams.push(year); }
+        if (month) { dateFilter += " AND strftime('%m', created_at) = ?"; dateParams.push(month); }
 
         for (const stage of stages) {
-            pipeline[stage] = db.prepare(`SELECT p.* FROM production p WHERE p.stage = ?${dateFilter}`).all(stage, ...dateParams);
+            pipeline[stage] = db.prepare(`
+                SELECT p.* FROM production p 
+                WHERE p.stage = ? 
+                  AND p.order_id IN (SELECT id FROM orders WHERE deleted_at IS NULL ${dateFilter})
+            `).all(stage, ...dateParams);
         }
 
         return NextResponse.json(pipeline);

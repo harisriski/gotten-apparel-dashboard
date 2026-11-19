@@ -7,7 +7,7 @@ export async function GET() {
         const rows = db.prepare(`
             SELECT DISTINCT substr(COALESCE(NULLIF(tanggal, ''), created_at), 1, 4) as year
             FROM orders
-            WHERE customer IS NOT NULL AND TRIM(customer) != ''
+            WHERE customer IS NOT NULL AND TRIM(customer) != '' AND deleted_at IS NULL
             ORDER BY year DESC
         `).all();
 

@@ -15,6 +15,7 @@ import FinanceFormPage from '../components/FinanceFormPage';
 import CustomerFormPage from '../components/CustomerFormPage';
 import InventoryFormPage from '../components/InventoryFormPage';
 import WorkOrderFormPage from '../components/WorkOrderFormPage';
+import TrashPage from '../components/TrashPage';
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('overview');
@@ -159,6 +160,7 @@ export default function Dashboard() {
     customers: <CustomersPage onAdd={handleCustomerAdd} onEdit={handleCustomerEdit} onDetail={handleCustomerDetail} />,
     inventory: <InventoryPage onAddRaw={handleInventoryAddRaw} onEditRaw={handleInventoryEditRaw} onAddStock={handleInventoryAddStock} onEditStock={handleInventoryEditStock} />,
     production: <WorkOrderPage onEdit={handleProductionEdit} />,
+    trash: <TrashPage />,
   };
 
   return (

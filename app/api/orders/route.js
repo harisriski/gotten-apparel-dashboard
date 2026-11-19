@@ -11,7 +11,7 @@ export async function GET(request) {
         const month = searchParams.get('month');
 
         let query = 'SELECT * FROM orders';
-        const conditions = [];
+        const conditions = ['deleted_at IS NULL'];
         const params = [];
 
         if (status && status !== 'all') {
@@ -157,7 +157,7 @@ export async function POST(request) {
             );
         }
 
-        // Auto-create Work Order Jersey for every new order
+        // Auto-create Work Order for every new order
         const countRow = db.prepare('SELECT COUNT(*) as count FROM work_orders').get();
         const seq = String((countRow ? countRow.count : 0) + 1).padStart(4, '0');
         const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
@@ -173,6 +173,41 @@ export async function POST(request) {
             body.company || body.product || '',
             body.shipping_term ? `Ketentuan: ${body.shipping_term}` : ''
         );
+
+        // Auto-sync customer to customers table
+        if (body.customer && body.customer.trim()) {
+            const custName = body.customer.trim();
+            const existingCust = db.prepare('SELECT id FROM customers WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1').get(custName);
+            if (!existingCust) {
+                db.prepare(`
+                    INSERT INTO customers (name, company, phone, email, address, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `).run(
+                    custName,
+                    body.company || '',
+                    body.phone || '',
+                    body.email || '',
+                    body.address || '',
+                    body.tanggal || new Date().toISOString()
+                );
+            } else {
+                // Update contact details if provided
+                db.prepare(`
+                    UPDATE customers SET
+                        company = CASE WHEN ? != '' THEN ? ELSE company END,
+                        phone = CASE WHEN ? != '' THEN ? ELSE phone END,
+                        email = CASE WHEN ? != '' THEN ? ELSE email END,
+                        address = CASE WHEN ? != '' THEN ? ELSE address END
+                    WHERE id = ?
+                `).run(
+                    body.company || '', body.company || '',
+                    body.phone || '', body.phone || '',
+                    body.email || '', body.email || '',
+                    body.address || '', body.address || '',
+                    existingCust.id
+                );
+            }
+        }
 
         const newOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(newId);
         return NextResponse.json(newOrder, { status: 201 });

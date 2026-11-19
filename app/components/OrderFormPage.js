@@ -208,254 +208,390 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
         setSaving(false);
     }
 
-    return (
-        <div className="page-content" style={{ paddingBottom: '5rem' }}>
-            <div className="form-page-header">
-                <button className="btn-back" onClick={onCancel}>
-                    <span className="material-icons-round">arrow_back</span>
-                    Kembali
-                </button>
-                <h2 className="form-page-title">{isEdit ? '✏️ Edit Pesanan' : '➕ Pesanan Baru'}</h2>
+    const cardStyle = {
+        background: 'var(--bg-card)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        padding: '1.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+    };
+
+    const cardHeader = (icon, title, right = null) => (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            borderBottom: '1px solid var(--border-color)',
+            paddingBottom: '0.85rem',
+            marginBottom: '1.25rem'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="material-icons-round" style={{ color: 'var(--accent-primary)', fontSize: '1.35rem' }}>{icon}</span>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{title}</h3>
             </div>
+            {right}
+        </div>
+    );
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    const grid2 = {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '0 1rem'
+    };
 
-                {/* SECTION 1: CUSTOMER */}
-                <div className="form-page-card" style={{ maxWidth: '100%' }}>
-                    <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>1. Data Pelanggan</h3>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Tanggal</span>
-                                {daysAgo > 0 && (
-                                    <span style={{
-                                        fontSize: '0.72rem',
-                                        background: 'rgba(245, 158, 11, 0.15)',
-                                        color: '#f59e0b',
-                                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                                        padding: '0.15rem 0.5rem',
-                                        borderRadius: '4px',
-                                        fontWeight: 600
-                                    }}>
-                                        ⏳ Pesanan Susulan ({daysAgo} hari lalu)
-                                    </span>
-                                )}
-                            </label>
-                            <input
-                                className="form-input"
-                                type="date"
-                                required
-                                value={data.tanggal}
-                                onChange={e => {
-                                    const val = e.target.value;
-                                    const update = { tanggal: val };
-                                    if (data.shipping_date && val && data.shipping_date < val) {
-                                        update.shipping_date = val;
-                                    }
-                                    setData({ ...data, ...update });
-                                }}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Status Pesanan</label>
-                            <select className="form-select" value={data.status} onChange={e => setData({ ...data, status: e.target.value })}>
-                                <option value="baru">Baru</option>
-                                <option value="proses">Diproses</option>
-                                <option value="selesai">Selesai</option>
-                                <option value="dikirim">Dikirim</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                        </div>
+    const sumRow = {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        fontSize: '0.85rem'
+    };
+
+    const sumInput = {
+        width: '150px',
+        textAlign: 'right',
+        height: '36px',
+        padding: '0.35rem 0.6rem'
+    };
+
+    const sisaTagihan = Math.max(0, total - (parseInt(data.dp) || 0));
+    const totalQtyForm = items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+
+    return (
+        <div className="page-content" style={{ paddingBottom: '4rem' }}>
+            <form onSubmit={handleSubmit}>
+                {/* ── HEADER RAMPING 1 BARIS ── */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.85rem',
+                    marginBottom: '1.25rem'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                        <button
+                            type="button"
+                            className="btn-back"
+                            onClick={onCancel}
+                            style={{ margin: 0, padding: '0.35rem 0.75rem', fontSize: '0.8rem', borderRadius: '8px', height: '34px' }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: '1rem' }}>arrow_back</span>
+                            Kembali
+                        </button>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            {isEdit ? `Edit Pesanan #${data.id}` : 'Pesanan Baru'}
+                        </h2>
+                        {daysAgo > 0 && (
+                            <span style={{
+                                fontSize: '0.72rem',
+                                background: 'rgba(245, 158, 11, 0.12)',
+                                color: '#d97706',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '999px',
+                                fontWeight: 700
+                            }}>
+                                ⏳ Pesanan Susulan ({daysAgo} hari lalu)
+                            </span>
+                        )}
                     </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="form-label">Nama Pelanggan</label>
-                            <input className="form-input" required value={data.customer} onChange={e => setData({ ...data, customer: e.target.value })} placeholder="Nama lengkap" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Nama Tim / Perusahaan</label>
-                            <input className="form-input" value={data.company} onChange={e => setData({ ...data, company: e.target.value })} placeholder="PT, CV, Sekolah, dll" />
-                        </div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="form-label">Produk (Judul Referensi)</label>
-                            <input className="form-input" required value={data.product} onChange={e => setData({ ...data, product: e.target.value })} placeholder="Cth: Kaos Oblong Angkatan" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Nomor WhatsApp / Phone</label>
-                            <input className="form-input" required value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })} placeholder="08xx xxxx xxxx" />
-                        </div>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Email</label>
-                        <input className="form-input" type="email" value={data.email} onChange={e => setData({ ...data, email: e.target.value })} placeholder="email@domain.com" />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Alamat Lengkap</label>
-                        <textarea className="form-input" rows="3" value={data.address} onChange={e => setData({ ...data, address: e.target.value })} placeholder="Jalan, RT/RW, Kecamatan, Kota, dsb." />
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'nowrap', marginLeft: 'auto' }}>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={onCancel}
+                            style={{ padding: '0.35rem 0.9rem', fontSize: '0.8rem', borderRadius: '8px', height: '34px', whiteSpace: 'nowrap' }}
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn-primary"
+                            disabled={saving}
+                            style={{
+                                width: 'auto',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.35rem 0.95rem',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                height: '34px',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: '1rem' }}>save</span>
+                            {saving ? 'Menyimpan...' : (isEdit ? 'Update Pesanan' : 'Simpan Pesanan')}
+                        </button>
                     </div>
                 </div>
 
-                {/* SECTION 2: ORDER PRODUK */}
-                <div className="form-page-card" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-                    <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>2. Order Produk</h3>
-                    <table className="data-table" style={{ minWidth: '700px' }}>
-                        <thead>
-                            <tr>
-                                <th style={{ width: '40%' }}>Deskripsi Produk</th>
-                                <th style={{ width: '15%' }}>Qty (Pcs)</th>
-                                <th style={{ width: '20%' }}>Harga / Unit (Rp)</th>
-                                <th style={{ width: '20%' }}>Harga Total (Rp)</th>
-                                <th style={{ width: '5%' }}>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.map((item, index) => {
-                                const isQtyInvalid = item.qty !== '' && item.qty !== undefined && (Number(item.qty) < 1 || Number(item.qty) > MAX_QTY);
-                                const isPriceInvalid = item.unit_price !== '' && item.unit_price !== undefined && (Number(item.unit_price) < 0 || Number(item.unit_price) > MAX_PRICE);
+                {/* ── 2 KOLOM: KIRI (DATA), KANAN (RINGKASAN) ── */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) 360px',
+                    gap: '1.5rem',
+                    alignItems: 'start'
+                }}>
+                    {/* ════════ KOLOM KIRI ════════ */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
 
-                                return (
-                                    <tr key={item.id}>
-                                        <td>
-                                            <input
-                                                className="form-input"
-                                                required
-                                                placeholder="Nama item / Ukuran"
-                                                value={item.description}
-                                                onChange={e => updateItem(index, 'description', e.target.value)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                                <input
-                                                    className="form-input"
-                                                    type="number"
-                                                    min="1"
-                                                    max={MAX_QTY}
-                                                    required
-                                                    value={item.qty}
-                                                    onKeyDown={blockNegativeAndExponent}
-                                                    onChange={e => updateItem(index, 'qty', e.target.value)}
-                                                    placeholder="1"
-                                                    title="Minimal 1 pcs, maksimal 1.000.000 pcs (tidak boleh minus)"
-                                                    style={{
-                                                        textAlign: 'center',
-                                                        borderColor: isQtyInvalid ? '#ef4444' : undefined,
-                                                        background: isQtyInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
-                                                    }}
-                                                />
-                                                {isQtyInvalid && (
-                                                    <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'center' }}>
-                                                        {Number(item.qty) < 1 ? 'Min 1 pcs' : 'Maks 1 Juta pcs'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                                <input
-                                                    className="form-input"
-                                                    type="number"
-                                                    min="0"
-                                                    max={MAX_PRICE}
-                                                    required
-                                                    value={item.unit_price}
-                                                    onKeyDown={blockNegativeAndExponent}
-                                                    onChange={e => updateItem(index, 'unit_price', e.target.value)}
-                                                    placeholder="0"
-                                                    title="Maksimal 15 digit (Rp 999 Triliun)"
-                                                    style={{
-                                                        textAlign: 'right',
-                                                        borderColor: isPriceInvalid ? '#ef4444' : undefined,
-                                                        background: isPriceInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
-                                                    }}
-                                                />
-                                                {isPriceInvalid && (
-                                                    <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'right' }}>
-                                                        Maks 15 digit
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td style={{ fontWeight: 600 }}>
-                                            {formatCurrency(item.price)}
-                                        </td>
-                                        <td>
-                                            <button type="button" className="action-btn" onClick={() => removeItem(index)} disabled={items.length <= 1} title="Hapus Baris" style={{ opacity: items.length <= 1 ? 0.3 : 1 }}>
-                                                <span className="material-icons-round">delete</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                    <button type="button" className="btn-secondary" onClick={addItem} style={{ marginTop: '1rem', borderStyle: 'dashed' }}>
-                        <span className="material-icons-round">add</span>
-                        Tambah Produk
-                    </button>
-                </div>
+                        {/* KARTU 1: DATA PELANGGAN */}
+                        <div style={cardStyle}>
+                            {cardHeader('badge', 'Data Pelanggan & Proyek')}
 
-                <div className="form-row" style={{ alignItems: 'flex-start' }}>
-                    {/* SECTION 4: PENGIRIMAN (Left side) */}
-                    <div className="form-page-card" style={{ flex: 1 }}>
-                        <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>3. Pengiriman</h3>
-                        <div className="form-group">
-                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Tanggal Pengiriman (Deadline)</span>
-                                {daysProduction !== null && !isDeadlineInvalid && (
-                                    <span style={{
-                                        fontSize: '0.72rem',
-                                        background: 'rgba(16, 185, 129, 0.12)',
-                                        color: '#10b981',
-                                        border: '1px solid rgba(16, 185, 129, 0.25)',
-                                        padding: '0.15rem 0.5rem',
-                                        borderRadius: '4px',
-                                        fontWeight: 600
-                                    }}>
-                                        ⏱️ {daysProduction} hari pengerjaan
-                                    </span>
-                                )}
-                            </label>
-                            <input
-                                className="form-input"
-                                type="date"
-                                required
-                                min={data.tanggal || todayStr}
-                                value={data.shipping_date}
-                                onChange={e => setData({ ...data, shipping_date: e.target.value })}
-                                style={isDeadlineInvalid ? { borderColor: '#ef4444' } : {}}
-                            />
-                            {isDeadlineInvalid && (
-                                <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '0.35rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>error_outline</span>
-                                    Deadline tidak boleh sebelum tanggal pesanan ({data.tanggal})
+                            <div style={grid2}>
+                                <div className="form-group">
+                                    <label className="form-label">Tanggal Pesanan</label>
+                                    <input
+                                        className="form-input"
+                                        type="date"
+                                        required
+                                        value={data.tanggal}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            const update = { tanggal: val };
+                                            if (data.shipping_date && val && data.shipping_date < val) {
+                                                update.shipping_date = val;
+                                            }
+                                            setData({ ...data, ...update });
+                                        }}
+                                    />
                                 </div>
-                            )}
+                                <div className="form-group">
+                                    <label className="form-label">Status Pesanan</label>
+                                    <select className="form-select" value={data.status} onChange={e => setData({ ...data, status: e.target.value })}>
+                                        <option value="baru">Baru</option>
+                                        <option value="proses">Diproses</option>
+                                        <option value="selesai">Selesai</option>
+                                        <option value="dikirim">Dikirim</option>
+                                        <option value="pending">Pending</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Nama Pelanggan</label>
+                                    <input className="form-input" required value={data.customer} onChange={e => setData({ ...data, customer: e.target.value })} placeholder="Nama lengkap" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Nama Tim / Perusahaan</label>
+                                    <input className="form-input" value={data.company} onChange={e => setData({ ...data, company: e.target.value })} placeholder="PT, CV, Sekolah, dll" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Produk (Judul Referensi)</label>
+                                    <input className="form-input" required value={data.product} onChange={e => setData({ ...data, product: e.target.value })} placeholder="Cth: Jersey Futsal Tim" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Nomor WhatsApp / Phone</label>
+                                    <input className="form-input" required value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })} placeholder="08xx xxxx xxxx" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Email</label>
+                                    <input className="form-input" type="email" value={data.email} onChange={e => setData({ ...data, email: e.target.value })} placeholder="email@domain.com" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Alamat Lengkap</label>
+                                    <textarea className="form-input" rows="2" value={data.address} onChange={e => setData({ ...data, address: e.target.value })} placeholder="Jalan, RT/RW, Kecamatan, Kota" style={{ resize: 'vertical' }} />
+                                </div>
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Metode Pengiriman</label>
-                            <input className="form-input" value={data.shipping_method} onChange={e => setData({ ...data, shipping_method: e.target.value })} placeholder="JNE, SiCepat, Cargo, Ambil Sendiri" />
+
+                        {/* KARTU 2: ORDER PRODUK */}
+                        <div style={cardStyle}>
+                            {cardHeader('inventory_2', 'Rincian Produk Pesanan', (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    {items.length} item • {totalQtyForm} pcs
+                                </span>
+                            ))}
+
+                            <div style={{ overflowX: 'auto' }}>
+                                <table className="data-table" style={{ width: '100%', minWidth: '620px' }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: '40px', textAlign: 'center' }}>No</th>
+                                            <th>Deskripsi Produk</th>
+                                            <th style={{ width: '100px', textAlign: 'center' }}>Qty (Pcs)</th>
+                                            <th style={{ width: '150px', textAlign: 'right' }}>Harga / Unit</th>
+                                            <th style={{ width: '140px', textAlign: 'right' }}>Total</th>
+                                            <th style={{ width: '50px', textAlign: 'center' }}></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {items.map((item, index) => {
+                                            const isQtyInvalid = item.qty !== '' && item.qty !== undefined && (Number(item.qty) < 1 || Number(item.qty) > MAX_QTY);
+                                            const isPriceInvalid = item.unit_price !== '' && item.unit_price !== undefined && (Number(item.unit_price) < 0 || Number(item.unit_price) > MAX_PRICE);
+
+                                            return (
+                                                <tr key={item.id}>
+                                                    <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{index + 1}</td>
+                                                    <td>
+                                                        <input
+                                                            className="form-input"
+                                                            required
+                                                            placeholder="Nama item / Ukuran"
+                                                            value={item.description}
+                                                            onChange={e => updateItem(index, 'description', e.target.value)}
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                            <input
+                                                                className="form-input"
+                                                                type="number"
+                                                                min="1"
+                                                                max={MAX_QTY}
+                                                                required
+                                                                value={item.qty}
+                                                                onKeyDown={blockNegativeAndExponent}
+                                                                onChange={e => updateItem(index, 'qty', e.target.value)}
+                                                                placeholder="1"
+                                                                title="Minimal 1 pcs, maksimal 1.000.000 pcs"
+                                                                style={{
+                                                                    textAlign: 'center',
+                                                                    borderColor: isQtyInvalid ? '#ef4444' : undefined,
+                                                                    background: isQtyInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
+                                                                }}
+                                                            />
+                                                            {isQtyInvalid && (
+                                                                <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'center' }}>
+                                                                    {Number(item.qty) < 1 ? 'Min 1 pcs' : 'Maks 1 Juta pcs'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                            <input
+                                                                className="form-input"
+                                                                type="number"
+                                                                min="0"
+                                                                max={MAX_PRICE}
+                                                                required
+                                                                value={item.unit_price}
+                                                                onKeyDown={blockNegativeAndExponent}
+                                                                onChange={e => updateItem(index, 'unit_price', e.target.value)}
+                                                                placeholder="0"
+                                                                title="Maksimal 15 digit"
+                                                                style={{
+                                                                    textAlign: 'right',
+                                                                    borderColor: isPriceInvalid ? '#ef4444' : undefined,
+                                                                    background: isPriceInvalid ? 'rgba(239, 68, 68, 0.05)' : undefined
+                                                                }}
+                                                            />
+                                                            {isPriceInvalid && (
+                                                                <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: 600, textAlign: 'right' }}>
+                                                                    Maks 15 digit
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                                        {formatCurrency(item.price)}
+                                                    </td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        <button
+                                                            type="button"
+                                                            className="action-btn"
+                                                            onClick={() => removeItem(index)}
+                                                            disabled={items.length <= 1}
+                                                            title="Hapus Baris"
+                                                            style={{ opacity: items.length <= 1 ? 0.3 : 1 }}
+                                                        >
+                                                            <span className="material-icons-round">delete</span>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={addItem}
+                                style={{
+                                    marginTop: '1rem',
+                                    borderStyle: 'dashed',
+                                    width: '100%',
+                                    justifyContent: 'center',
+                                    padding: '0.55rem',
+                                    fontSize: '0.82rem',
+                                    borderRadius: '8px'
+                                }}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>add</span>
+                                Tambah Produk
+                            </button>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Ketentuan Pengiriman / Catatan</label>
-                            <textarea className="form-input" rows="3" value={data.shipping_term} onChange={e => setData({ ...data, shipping_term: e.target.value })} placeholder="Catatan tambahan untuk kurir/pengiriman" />
+
+                        {/* KARTU 3: PENGIRIMAN */}
+                        <div style={cardStyle}>
+                            {cardHeader('local_shipping', 'Informasi Pengiriman')}
+
+                            <div style={grid2}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span>Tanggal Pengiriman (Deadline)</span>
+                                        {daysProduction !== null && !isDeadlineInvalid && (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                background: 'rgba(16, 185, 129, 0.12)',
+                                                color: '#059669',
+                                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                                padding: '0.1rem 0.45rem',
+                                                borderRadius: '999px',
+                                                fontWeight: 700,
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                ⏱️ {daysProduction} hari
+                                            </span>
+                                        )}
+                                    </label>
+                                    <input
+                                        className="form-input"
+                                        type="date"
+                                        required
+                                        min={data.tanggal || todayStr}
+                                        value={data.shipping_date}
+                                        onChange={e => setData({ ...data, shipping_date: e.target.value })}
+                                        style={isDeadlineInvalid ? { borderColor: '#ef4444' } : {}}
+                                    />
+                                    {isDeadlineInvalid && (
+                                        <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '0.35rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>error_outline</span>
+                                            Deadline tidak boleh sebelum tanggal pesanan ({data.tanggal})
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Metode Pengiriman</label>
+                                    <input className="form-input" value={data.shipping_method} onChange={e => setData({ ...data, shipping_method: e.target.value })} placeholder="JNE, SiCepat, Cargo, Ambil Sendiri" />
+                                </div>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Ketentuan Pengiriman / Catatan</label>
+                                <textarea className="form-input" rows="2" value={data.shipping_term} onChange={e => setData({ ...data, shipping_term: e.target.value })} placeholder="Catatan tambahan untuk kurir/pengiriman" style={{ resize: 'vertical' }} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* SECTION 3: TOTAL (Right side) */}
-                    <div className="form-page-card" style={{ width: '400px', flexShrink: 0, position: 'sticky', top: '90px' }}>
-                        <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', fontWeight: 600 }}>4. Ringkasan & Total</h3>
+                    {/* ════════ KOLOM KANAN: RINGKASAN (STICKY) ════════ */}
+                    <div style={{ ...cardStyle, position: 'sticky', top: '90px' }}>
+                        {cardHeader('receipt_long', 'Ringkasan & Total')}
 
-                        <div className="detail-row">
-                            <span className="detail-label">Subtotal</span>
-                            <span className="detail-value">{formatCurrency(subtotal)}</span>
-                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={sumRow}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Subtotal Produk</span>
+                                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(subtotal)}</span>
+                            </div>
 
-                        <div className="detail-row" style={{ alignItems: 'center' }}>
-                            <span className="detail-label">Potongan (Rp)</span>
-                            <div style={{ width: '50%' }}>
+                            <div style={sumRow}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Potongan (Rp)</span>
                                 <input
                                     className="form-input"
                                     type="number"
@@ -466,20 +602,18 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                                     onChange={e => updateNonNegativeField('potongan', e.target.value)}
                                     placeholder="0"
                                     title="Maksimal 15 digit"
-                                    style={{ textAlign: 'right' }}
+                                    style={sumInput}
                                 />
                             </div>
-                        </div>
-                        {potonganAmount > 0 && (
-                            <div className="detail-row" style={{ borderBottom: 'none', paddingTop: 0, marginTop: '-0.5rem' }}>
-                                <span className="detail-label" style={{ fontSize: '0.75rem' }}>Nilai Potongan</span>
-                                <span className="detail-value" style={{ color: 'var(--accent-red)', fontSize: '0.8rem' }}>-{formatCurrency(potonganAmount)}</span>
-                            </div>
-                        )}
+                            {potonganAmount > 0 && (
+                                <div style={{ ...sumRow, marginTop: '-0.4rem', fontSize: '0.75rem' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Nilai potongan</span>
+                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>-{formatCurrency(potonganAmount)}</span>
+                                </div>
+                            )}
 
-                        <div className="detail-row" style={{ alignItems: 'center' }}>
-                            <span className="detail-label">Biaya Pengiriman</span>
-                            <div style={{ width: '50%' }}>
+                            <div style={sumRow}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Biaya Pengiriman</span>
                                 <input
                                     className="form-input"
                                     type="number"
@@ -490,14 +624,21 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                                     onChange={e => updateNonNegativeField('shipping_cost', e.target.value)}
                                     placeholder="0"
                                     title="Maksimal 15 digit"
-                                    style={{ textAlign: 'right' }}
+                                    style={sumInput}
                                 />
                             </div>
-                        </div>
 
-                        <div className="detail-row" style={{ alignItems: 'center' }}>
-                            <span className="detail-label">Down Payment (DP)</span>
-                            <div style={{ width: '50%' }}>
+                            <div style={{
+                                ...sumRow,
+                                borderTop: '1px dashed var(--border-color)',
+                                paddingTop: '0.75rem'
+                            }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>Total Bayar</span>
+                                <span style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--accent-primary)' }}>{formatCurrency(total)}</span>
+                            </div>
+
+                            <div style={sumRow}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Down Payment (DP)</span>
                                 <input
                                     className="form-input"
                                     type="number"
@@ -508,32 +649,54 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                                     onChange={e => updateNonNegativeField('dp', e.target.value)}
                                     placeholder="0"
                                     title="Maksimal 15 digit"
-                                    style={{ textAlign: 'right' }}
+                                    style={sumInput}
                                 />
                             </div>
-                        </div>
 
-                        <div className="detail-row" style={{ borderTop: '2px dashed var(--border-color)', marginTop: '0.5rem', paddingTop: '1rem' }}>
-                            <span className="detail-label" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Total Bayar</span>
-                            <span className="detail-value" style={{ fontSize: '1.4rem', color: 'var(--accent-green)' }}>{formatCurrency(total)}</span>
-                        </div>
+                            {/* Highlight Sisa Tagihan */}
+                            <div style={{
+                                marginTop: '0.25rem',
+                                padding: '0.8rem 1rem',
+                                borderRadius: '12px',
+                                background: sisaTagihan > 0 ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                                border: `1.5px solid ${sisaTagihan > 0 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+                            }}>
+                                <span style={{
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                    color: sisaTagihan > 0 ? '#d97706' : '#059669'
+                                }}>
+                                    Sisa Tagihan
+                                </span>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: sisaTagihan > 0 ? '#d97706' : '#059669', marginTop: '0.1rem' }}>
+                                    {sisaTagihan > 0 ? formatCurrency(sisaTagihan) : 'Lunas'}
+                                </div>
+                            </div>
 
-                        <div className="detail-row" style={{ borderBottom: 'none' }}>
-                            <span className="detail-label">Sisa Tagihan</span>
-                            <span className="detail-value" style={{ color: (total - (parseInt(data.dp) || 0)) > 0 ? 'var(--accent-yellow)' : 'var(--text-muted)' }}>
-                                {formatCurrency(Math.max(0, total - (parseInt(data.dp) || 0)))}
-                            </span>
-                        </div>
-
-                        <div className="form-page-actions" style={{ flexDirection: 'column', marginTop: '2rem' }}>
-                            <button type="submit" className="btn-primary" disabled={saving} style={{ width: '100%', justifyContent: 'center', padding: '0.85rem' }}>
+                            <button
+                                type="submit"
+                                className="btn-primary"
+                                disabled={saving}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.4rem',
+                                    padding: '0.75rem',
+                                    marginTop: '0.5rem',
+                                    borderRadius: '8px',
+                                    fontWeight: 700
+                                }}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: '1.1rem' }}>save</span>
                                 {saving ? 'Menyimpan...' : (isEdit ? 'Update Pesanan' : 'Simpan Pesanan')}
                             </button>
-                            <button type="button" className="btn-secondary" onClick={onCancel} style={{ width: '100%', justifyContent: 'center' }}>Batal</button>
                         </div>
                     </div>
                 </div>
-
             </form>
 
             {/* Success Modal with PDF Download */}
