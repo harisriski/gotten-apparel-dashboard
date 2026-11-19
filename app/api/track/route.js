@@ -48,16 +48,17 @@ export async function GET(request) {
             SELECT team_name, designs, timeline_kerja, data_transaksi
             FROM work_orders
             WHERE order_id = ? AND deleted_at IS NULL
+            ORDER BY id DESC
             LIMIT 1
         `).get(order.id);
 
-        // Parse designs (Mockup Desain Jersey)
+        // Parse designs (Mockup Desain Jersey yang sudah memiliki file gambar / URL)
         let designs = [];
         if (wo && wo.designs) {
             try {
                 const parsed = typeof wo.designs === 'string' ? JSON.parse(wo.designs) : wo.designs;
                 if (Array.isArray(parsed)) {
-                    designs = parsed.filter(d => d && (d.url || d.previewUrl || d.fileName));
+                    designs = parsed.filter(d => d && typeof d === 'object' && (d.url || d.previewUrl));
                 }
             } catch {
                 designs = [];
