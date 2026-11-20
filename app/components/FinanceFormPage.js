@@ -257,7 +257,7 @@ export default function FinanceFormPage({ editTx, onSave, onCancel }) {
                         <span className="material-icons-round">arrow_back</span>
                         Kembali
                     </button>
-                    <h2 className="form-page-title">✏️ Edit Transaksi DP &amp; Pelunasan</h2>
+                    <h2 className="form-page-title">Edit Transaksi DP &amp; Pelunasan</h2>
                 </div>
 
                 <div className="form-page-card" style={{ maxWidth: '640px' }}>

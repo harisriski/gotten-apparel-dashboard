@@ -2,12 +2,12 @@ import getDb from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_TIMELINE_TASKS = [
-    { id: 'beli_kain', tugas: 'Beli Kain', durasi: '1', pic: '', ci: '', isCustom: false },
-    { id: 'cutting', tugas: 'Cutting', durasi: '0', pic: '', ci: '', isCustom: false },
-    { id: 'printing', tugas: 'Printing/Sablon', durasi: '5', pic: '', ci: '', isCustom: false },
-    { id: 'jahit', tugas: 'Jahit', durasi: '14', pic: '', ci: '', isCustom: false },
-    { id: 'qc', tugas: 'QC', durasi: '1', pic: '', ci: '', isCustom: false },
-    { id: 'packing_kirim', tugas: 'Packing + Kirim', durasi: '1', pic: '', ci: '', isCustom: false },
+    { id: 'beli_kain', tugas: 'Beli Kain', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
+    { id: 'cutting', tugas: 'Cutting', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
+    { id: 'printing', tugas: 'Printing/Sablon', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
+    { id: 'jahit', tugas: 'Jahit', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
+    { id: 'qc', tugas: 'QC', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
+    { id: 'packing_kirim', tugas: 'Packing + Kirim', durasi: '0', pic: '', ci: '', is_done: false, isCustom: false },
 ];
 
 export async function GET(request) {
@@ -74,12 +74,13 @@ export async function GET(request) {
                     timelineKerja = parsed.map((item, idx) => ({
                         id: item.id || `task_${idx}`,
                         tugas: item.tugas || `Tahapan ${idx + 1}`,
-                        durasi: item.durasi !== undefined ? String(item.durasi) : '1',
+                        durasi: item.durasi !== undefined ? String(item.durasi) : '0',
                         pic: item.pic || '',
                         ci: item.ci || '',
                         mulai: item.mulai || '',
                         selesai: item.selesai || '',
-                        isCustom: !DEFAULT_TIMELINE_TASKS.some(d => d.tugas === item.tugas)
+                        is_done: Boolean(item.is_done),
+                        isCustom: Boolean(item.isCustom)
                     }));
                 }
             } catch {

@@ -451,6 +451,7 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                                 <th>Total Tagihan</th>
                                 <th>Pembayaran</th>
                                 <th>Status</th>
+                                <th>Tgl Masuk</th>
                                 <th>Deadline</th>
                                 <th>Aksi</th>
                             </tr>
@@ -458,11 +459,11 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                         <tbody>
                             {loading ? (
                                 [1, 2, 3, 4, 5].map(i => (
-                                    <tr key={i}><td colSpan={9}><div className="skeleton skeleton-row" /></td></tr>
+                                    <tr key={i}><td colSpan={10}><div className="skeleton skeleton-row" /></td></tr>
                                 ))
                             ) : displayedOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-secondary)' }}>
+                                    <td colSpan={10} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-secondary)' }}>
                                         <span className="material-icons-round" style={{ fontSize: '3rem', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>
                                             {hasActiveFilter ? 'filter_list_off' : 'inbox'}
                                         </span>
@@ -546,7 +547,10 @@ export default function OrdersPage({ onOrderClick, onAdd, onEdit, searchQuery })
                                                 )}
                                             </td>
                                             <td><span className={`status-badge ${o.status}`}>{getStatusLabel(o.status)}</span></td>
-                                            <td>{formatDate(o.deadline)}</td>
+                                            <td style={{ whiteSpace: 'nowrap', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                                {formatDate(o.tanggal || o.created_at)}
+                                            </td>
+                                            <td style={{ whiteSpace: 'nowrap' }}>{formatDate(o.deadline)}</td>
                                             <td>
                                                 <button className="action-btn" onClick={() => onOrderClick && onOrderClick(o)} title="Detail">
                                                     <span className="material-icons-round">visibility</span>

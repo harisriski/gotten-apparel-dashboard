@@ -552,13 +552,17 @@ export default function WorkOrderPrintModal({ workOrder, onClose }) {
                             </thead>
                             <tbody>
                                 {timeline.map((t, idx) => (
-                                    <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                                        <td style={{ ...cell, fontWeight: 600 }}>{idx + 1}. {t.tugas}</td>
+                                    <tr key={idx} style={{ background: t.is_done ? '#f0fdf4' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc') }}>
+                                        <td style={{ ...cell, fontWeight: 600, color: t.is_done ? '#166534' : '#1e293b' }}>
+                                            {idx + 1}. {t.tugas} {t.is_done && <span style={{ color: '#059669', fontSize: '0.65rem' }}>[✓]</span>}
+                                        </td>
                                         <td style={{ ...cell, textAlign: 'center' }}>{t.mulai || '-'}</td>
                                         <td style={{ ...cell, textAlign: 'center', fontWeight: 600 }}>{t.selesai || '-'}</td>
                                         <td style={{ ...cell, textAlign: 'center' }}>{t.durasi || 0} Hari</td>
                                         <td style={cell}>{t.pic || '-'}</td>
-                                        <td style={{ ...cell, textAlign: 'center', color: '#64748b' }}>{t.ci || '[       ]'}</td>
+                                        <td style={{ ...cell, textAlign: 'center', color: t.is_done ? '#059669' : '#64748b', fontWeight: t.is_done ? 700 : 400 }}>
+                                            {t.is_done ? '✓ Selesai' : (t.ci || '[       ]')}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

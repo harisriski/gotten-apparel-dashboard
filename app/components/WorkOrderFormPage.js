@@ -122,12 +122,12 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
 
     // ── 5. Timeline Kerja Jersey ──
     const DEFAULT_TIMELINE_TASKS = [
-        { key: 'beli_kain', tugas: 'Beli Kain', defaultDurasi: '1' },
+        { key: 'beli_kain', tugas: 'Beli Kain', defaultDurasi: '0' },
         { key: 'cutting', tugas: 'Cutting', defaultDurasi: '0' },
-        { key: 'printing', tugas: 'Printing/Sablon', defaultDurasi: '5' },
-        { key: 'jahit', tugas: 'Jahit', defaultDurasi: '14' },
-        { key: 'qc', tugas: 'QC', defaultDurasi: '1' },
-        { key: 'packing_kirim', tugas: 'Packing + Kirim', defaultDurasi: '1' },
+        { key: 'printing', tugas: 'Printing/Sablon', defaultDurasi: '0' },
+        { key: 'jahit', tugas: 'Jahit', defaultDurasi: '0' },
+        { key: 'qc', tugas: 'QC', defaultDurasi: '0' },
+        { key: 'packing_kirim', tugas: 'Packing + Kirim', defaultDurasi: '0' },
     ];
 
     const initialTimelineData = (() => {
@@ -138,7 +138,8 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                 durasi: t.durasi !== undefined ? String(t.durasi) : '0',
                 pic: t.pic || '',
                 ci: t.ci || '',
-                isCustom: !DEFAULT_TIMELINE_TASKS.some(d => d.tugas === t.tugas)
+                is_done: Boolean(t.is_done),
+                isCustom: Boolean(t.isCustom)
             }));
         }
         return DEFAULT_TIMELINE_TASKS.map(task => ({
@@ -147,6 +148,7 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
             durasi: task.defaultDurasi,
             pic: '',
             ci: '',
+            is_done: false,
             isCustom: false
         }));
     })();
@@ -160,9 +162,10 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
             const newRow = {
                 id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                 tugas: '',
-                durasi: '1',
+                durasi: '0',
                 pic: '',
                 ci: '',
+                is_done: false,
                 isCustom: true
             };
             next.splice(idx + 1, 0, newRow);
@@ -179,17 +182,18 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
         setTimelineRows(prev => prev.filter((_, i) => i !== idx));
     }
 
-    // Reset kembali ke 6 tugas standar
+    // Reset kembali ke 6 tugas standar (durasi kembali 0, nama kembali default)
     function resetTimelineToDefault() {
-        if (confirm('Kembalikan timeline kerja ke 6 tahap standar? Data durasi & PIC yang sudah diisi di tahap standar akan dipertahankan.')) {
+        if (confirm('Kembalikan timeline kerja ke 6 tahap standar? Data PIC & status selesai yang sudah diisi akan tetap disesuaikan.')) {
             setTimelineRows(DEFAULT_TIMELINE_TASKS.map(task => {
-                const existing = timelineRows.find(t => t.tugas === task.tugas);
+                const existing = timelineRows.find(t => t.id === task.key || t.tugas === task.tugas);
                 return {
                     id: task.key,
                     tugas: task.tugas,
-                    durasi: existing?.durasi !== undefined ? String(existing.durasi) : task.defaultDurasi,
+                    durasi: existing?.durasi !== undefined ? String(existing.durasi) : '0',
                     pic: existing?.pic || '',
                     ci: existing?.ci || '',
+                    is_done: Boolean(existing?.is_done),
                     isCustom: false
                 };
             }));
@@ -597,7 +601,9 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                 selesai: t.selesai,
                 durasi: t.durasi,
                 pic: t.pic,
-                ci: t.ci
+                ci: t.ci,
+                is_done: Boolean(t.is_done),
+                isCustom: Boolean(t.isCustom)
             })),
             data_ukuran: {
                 atasan: ukuranAtasan.filter(u => u.size.trim() !== '' || u.qty !== ''),
@@ -1692,22 +1698,25 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
                                 <thead>
                                     <tr style={{ background: '#ede9fe', color: '#5b21b6' }}>
-                                        <th rowSpan="2" style={{ padding: '0.75rem 0.85rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '22%' }}>
-                                            Tugas
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '7%' }} title="Tandai jika tugas ini sudah selesai">
+                                            Selesai
                                         </th>
-                                        <th colSpan="2" style={{ padding: '0.5rem 0.75rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '31%' }}>
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.85rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '25%' }}>
+                                            Tahap / Tugas
+                                        </th>
+                                        <th colSpan="2" style={{ padding: '0.5rem 0.75rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '28%' }}>
                                             Timeline
                                         </th>
-                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '11%' }}>
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '10%' }}>
                                             Durasi (Hari)
                                         </th>
-                                        <th rowSpan="2" style={{ padding: '0.75rem 0.65rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '15%' }}>
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.65rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '13%' }}>
                                             PIC
                                         </th>
-                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '8%' }}>
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, width: '7%' }}>
                                             CI
                                         </th>
-                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '13%' }}>
+                                        <th rowSpan="2" style={{ padding: '0.75rem 0.5rem', border: '1px solid #ddd6fe', fontWeight: 700, textAlign: 'center', width: '10%' }}>
                                             Aksi
                                         </th>
                                     </tr>
@@ -1722,46 +1731,65 @@ export default function WorkOrderFormPage({ editItem, onSave, onCancel }) {
                                 </thead>
                                 <tbody>
                                     {computedTimeline.map((item, idx) => (
-                                        <tr key={item.id || idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#faf5ff' }}>
-                                            {/* Tugas */}
-                                            <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #e9d5ff', fontWeight: 600, color: '#1e293b' }}>
+                                        <tr key={item.id || idx} style={{ background: item.is_done ? '#f0fdf4' : (idx % 2 === 0 ? '#ffffff' : '#faf5ff'), transition: 'background 0.15s ease' }}>
+                                            {/* Checklist Selesai */}
+                                            <td style={{ padding: '0.55rem 0.4rem', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                                                <label style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    gap: '0.2rem'
+                                                }} title={item.is_done ? 'Tandai belum selesai' : 'Tandai tahap ini selesai'}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={Boolean(item.is_done)}
+                                                        onChange={e => updateTimelineRow(idx, 'is_done', e.target.checked)}
+                                                        style={{
+                                                            width: '18px',
+                                                            height: '18px',
+                                                            accentColor: '#059669',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    />
+                                                </label>
+                                            </td>
+
+                                            {/* Tugas (Dinamis Editable untuk Semua Baris) */}
+                                            <td style={{ padding: '0.55rem 0.65rem', border: '1px solid #e9d5ff', fontWeight: 600, color: '#1e293b' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                                                     <span style={{
                                                         width: '22px',
                                                         height: '22px',
                                                         borderRadius: '50%',
-                                                        background: item.isCustom ? '#c084fc' : '#ede9fe',
-                                                        color: item.isCustom ? '#ffffff' : '#7c3aed',
+                                                        background: item.is_done ? '#dcfce7' : item.isCustom ? '#c084fc' : '#ede9fe',
+                                                        color: item.is_done ? '#15803d' : item.isCustom ? '#ffffff' : '#7c3aed',
                                                         display: 'inline-flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         fontSize: '0.75rem',
-                                                        fontWeight: 700,
+                                                        fontWeight: 800,
                                                         flexShrink: 0
                                                     }}>
-                                                        {idx + 1}
+                                                        {item.is_done ? '✓' : idx + 1}
                                                     </span>
 
-                                                    {item.isCustom ? (
-                                                        <input
-                                                            type="text"
-                                                            className="form-input"
-                                                            value={item.tugas}
-                                                            onChange={e => updateTimelineRow(idx, 'tugas', e.target.value)}
-                                                            placeholder="Ketik nama tugas (cth: Bordir)..."
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '0.35rem 0.5rem',
-                                                                fontSize: '0.85rem',
-                                                                fontWeight: 600,
-                                                                borderColor: '#c084fc',
-                                                                background: '#ffffff'
-                                                            }}
-                                                            autoFocus
-                                                        />
-                                                    ) : (
-                                                        <span style={{ fontSize: '0.9rem' }}>{item.tugas}</span>
-                                                    )}
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        value={item.tugas}
+                                                        onChange={e => updateTimelineRow(idx, 'tugas', e.target.value)}
+                                                        placeholder={`Nama tugas ${idx + 1}...`}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '0.35rem 0.5rem',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: 600,
+                                                            borderColor: item.is_done ? '#86efac' : (item.isCustom ? '#c084fc' : '#cbd5e1'),
+                                                            background: item.is_done ? '#ffffff' : '#ffffff',
+                                                            color: item.is_done ? '#166534' : '#0f172a'
+                                                        }}
+                                                    />
                                                 </div>
                                             </td>
 

@@ -426,10 +426,10 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                 fontWeight: 700,
                                 background: isProses ? 'rgba(5, 150, 105, 0.1)'
                                     : (isSelesai || isDikirim) ? 'rgba(59, 130, 246, 0.1)'
-                                    : 'rgba(245, 158, 11, 0.1)',
+                                        : 'rgba(245, 158, 11, 0.1)',
                                 color: isProses ? '#059669'
                                     : (isSelesai || isDikirim) ? '#2563eb'
-                                    : '#d97706',
+                                        : '#d97706',
                                 border: `1px solid ${isProses ? '#05966930' : (isSelesai || isDikirim) ? '#2563eb30' : '#d9770630'}`
                             }}>
                                 <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>
@@ -794,68 +794,88 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                                 {/* Daftar Baris Timeline Kerja */}
                                                 <div style={{
                                                     display: 'grid',
-                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                                                     gap: '0.65rem'
                                                 }}>
-                                                    {orderData.timeline_kerja && orderData.timeline_kerja.map((task, tIdx) => {
-                                                        // Progress estimation
-                                                        // If order is completed or shipped, all tasks are done
-                                                        // If order is newly queued (baru), all tasks pending
-                                                        // If order is in proses:
-                                                        const isTaskDone = isSelesai || isDikirim;
-                                                        const isTaskActive = isProses && tIdx === 2; // e.g. printing or active
-                                                        
-                                                        return (
-                                                            <div
-                                                                key={task.id || tIdx}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '0.65rem',
-                                                                    padding: '0.65rem 0.85rem',
-                                                                    borderRadius: '10px',
-                                                                    background: isTaskDone ? '#f0fdf4' : '#f8fafc',
-                                                                    border: `1px solid ${isTaskDone ? '#bbf7d0' : '#e2e8f0'}`
-                                                                }}
-                                                            >
-                                                                <div style={{
-                                                                    width: '24px',
-                                                                    height: '24px',
-                                                                    borderRadius: '50%',
-                                                                    background: isTaskDone ? '#059669' : isProses ? '#e2e8f0' : '#f1f5f9',
-                                                                    color: isTaskDone ? '#ffffff' : '#64748b',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    fontSize: '0.72rem',
-                                                                    fontWeight: 800,
-                                                                    flexShrink: 0
-                                                                }}>
-                                                                    {isTaskDone ? (
-                                                                        <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>check</span>
-                                                                    ) : (
-                                                                        tIdx + 1
-                                                                    )}
-                                                                </div>
+                                                    {orderData.timeline_kerja && (() => {
+                                                        const firstUnfinishedIdx = orderData.timeline_kerja.findIndex(t => !t.is_done);
 
-                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                        return orderData.timeline_kerja.map((task, tIdx) => {
+                                                            const isTaskDone = isSelesai || isDikirim || Boolean(task.is_done);
+                                                            const isTaskActive = isProses && !isTaskDone && (firstUnfinishedIdx === tIdx || (firstUnfinishedIdx === -1 && tIdx === 0));
+
+                                                            return (
+                                                                <div
+                                                                    key={task.id || tIdx}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.65rem',
+                                                                        padding: '0.65rem 0.85rem',
+                                                                        borderRadius: '10px',
+                                                                        background: isTaskDone ? '#f0fdf4' : isTaskActive ? '#eff6ff' : '#f8fafc',
+                                                                        border: `1.5px solid ${isTaskDone ? '#bbf7d0' : isTaskActive ? '#93c5fd' : '#e2e8f0'}`,
+                                                                        transition: 'all 0.2s ease'
+                                                                    }}
+                                                                >
                                                                     <div style={{
-                                                                        fontSize: '0.84rem',
-                                                                        fontWeight: 700,
-                                                                        color: isTaskDone ? '#065f46' : '#1e293b',
-                                                                        whiteSpace: 'nowrap',
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis'
+                                                                        width: '26px',
+                                                                        height: '26px',
+                                                                        borderRadius: '50%',
+                                                                        background: isTaskDone ? '#059669' : isTaskActive ? '#2563eb' : '#f1f5f9',
+                                                                        color: (isTaskDone || isTaskActive) ? '#ffffff' : '#94a3b8',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 800,
+                                                                        flexShrink: 0
                                                                     }}>
-                                                                        {task.tugas}
+                                                                        {isTaskDone ? (
+                                                                            <span className="material-icons-round" style={{ fontSize: '0.95rem' }}>check</span>
+                                                                        ) : isTaskActive ? (
+                                                                            <span className="material-icons-round" style={{ fontSize: '0.9rem', animation: 'spin 2s infinite linear' }}>sync</span>
+                                                                        ) : (
+                                                                            tIdx + 1
+                                                                        )}
                                                                     </div>
-                                                                    <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                                                                        Durasi: {task.durasi || 1} Hari {task.isCustom ? '• (Tambahan)' : ''}
+
+                                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'space-between',
+                                                                            gap: '0.35rem'
+                                                                        }}>
+                                                                            <div style={{
+                                                                                fontSize: '0.84rem',
+                                                                                fontWeight: 700,
+                                                                                color: isTaskDone ? '#065f46' : isTaskActive ? '#1e40af' : '#1e293b',
+                                                                                whiteSpace: 'nowrap',
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis'
+                                                                            }}>
+                                                                                {task.tugas}
+                                                                            </div>
+
+                                                                            <span style={{
+                                                                                fontSize: '0.68rem',
+                                                                                fontWeight: 700,
+                                                                                padding: '0.15rem 0.45rem',
+                                                                                borderRadius: '999px',
+                                                                                background: isTaskDone ? '#dcfce7' : isTaskActive ? '#dbeafe' : '#f1f5f9',
+                                                                                color: isTaskDone ? '#15803d' : isTaskActive ? '#1d4ed8' : '#94a3b8',
+                                                                                whiteSpace: 'nowrap',
+                                                                                flexShrink: 0
+                                                                            }}>
+                                                                                {isTaskDone ? 'Selesai' : isTaskActive ? 'Dikerjakan' : 'Menunggu'}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                            );
+                                                        });
+                                                    })()}
                                                 </div>
                                             </div>
                                         )}
