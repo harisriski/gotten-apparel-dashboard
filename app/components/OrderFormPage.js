@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { downloadInvoice } from '@/lib/generateInvoice';
 
 const emptyItem = { id: Date.now(), description: '', qty: 1, unit_price: 0 };
@@ -53,6 +53,65 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
     const [saving, setSaving] = useState(false);
     const [savedOrder, setSavedOrder] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    // ── Autocomplete Data Pelanggan ──
+    const [customerList, setCustomerList] = useState([]);
+    const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+    const customerRef = useRef(null);
+
+    useEffect(() => {
+        fetch('/api/customers')
+            .then(r => r.json())
+            .then(d => {
+                if (d && Array.isArray(d.customers)) {
+                    setCustomerList(d.customers);
+                }
+            })
+            .catch(err => console.error('Fetch customers for autocomplete error:', err));
+    }, []);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (customerRef.current && !customerRef.current.contains(event.target)) {
+                setShowCustomerSuggestions(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    function getInitials(name) {
+        if (!name) return '??';
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    const searchCustomerQuery = (data.customer || '').trim().toLowerCase();
+    const customerSuggestions = searchCustomerQuery
+        ? customerList.filter(c =>
+            (c.name && c.name.toLowerCase().includes(searchCustomerQuery)) ||
+            (c.phone && c.phone.includes(searchCustomerQuery)) ||
+            (c.company && c.company.toLowerCase().includes(searchCustomerQuery))
+        ).slice(0, 8)
+        : customerList.slice(0, 8);
+
+    const matchedCustomer = customerList.find(c =>
+        c.name && c.name.trim().toLowerCase() === searchCustomerQuery
+    );
+
+    function handleSelectCustomer(c) {
+        setData(prev => ({
+            ...prev,
+            customer: c.name,
+            phone: c.phone || prev.phone,
+            email: c.email || prev.email,
+            address: c.address || prev.address,
+            // Jika kolom tim/perusahaan belum diisi, sarankan tim sebelumnya
+            company: prev.company || c.company || ''
+        }));
+        setShowCustomerSuggestions(false);
+    }
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -201,9 +260,13 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                 } else {
                     onSave();
                 }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`Gagal menyimpan pesanan: ${errData.error || 'Terjadi kesalahan pada server saat menyimpan'}`);
             }
         } catch (err) {
-            console.error(err);
+            console.error('Submit order error:', err);
+            alert(`Terjadi kesalahan jaringan/sistem: ${err.message}`);
         }
         setSaving(false);
     }
@@ -372,13 +435,184 @@ export default function OrderFormPage({ editOrder, onSave, onCancel }) {
                                         <option value="pending">Pending</option>
                                     </select>
                                 </div>
-                                <div className="form-group">
-                                    <label className="form-label">Nama Pelanggan</label>
-                                    <input className="form-input" required value={data.customer} onChange={e => setData({ ...data, customer: e.target.value })} placeholder="Nama lengkap" />
+                                <div className="form-group" ref={customerRef} style={{ position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                        <label className="form-label" style={{ margin: 0, fontWeight: 700 }}>
+                                            Nama Pemesan / PIC (Akun Pelanggan) <span style={{ color: '#ef4444' }}>*</span>
+                                        </label>
+                                        {matchedCustomer ? (
+                                            <span style={{
+                                                fontSize: '0.72rem',
+                                                fontWeight: 700,
+                                                background: '#dcfce7',
+                                                color: '#15803d',
+                                                padding: '0.15rem 0.5rem',
+                                                borderRadius: '999px',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem'
+                                            }}>
+                                                <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>check_circle</span>
+                                                Pelanggan Terdaftar ({matchedCustomer.orderCount || 0}x order • {matchedCustomer.totalQty || 0} pcs)
+                                            </span>
+                                        ) : data.customer && data.customer.trim().length > 1 ? (
+                                            <span style={{
+                                                fontSize: '0.72rem',
+                                                fontWeight: 600,
+                                                background: '#eff6ff',
+                                                color: '#2563eb',
+                                                padding: '0.15rem 0.5rem',
+                                                borderRadius: '999px',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem'
+                                            }}>
+                                                <span className="material-icons-round" style={{ fontSize: '0.85rem' }}>person_add</span>
+                                                Pelanggan Baru (Auto-save)
+                                            </span>
+                                        ) : null}
+                                    </div>
+
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            className="form-input"
+                                            required
+                                            value={data.customer}
+                                            onChange={e => {
+                                                setData({ ...data, customer: e.target.value });
+                                                setShowCustomerSuggestions(true);
+                                            }}
+                                            onFocus={() => setShowCustomerSuggestions(true)}
+                                            placeholder="Ketik nama pemesan / reseller (cth: Angga)"
+                                            autoComplete="off"
+                                            style={{
+                                                paddingRight: matchedCustomer ? '2.5rem' : '0.75rem',
+                                                borderColor: matchedCustomer ? '#22c55e' : undefined
+                                            }}
+                                        />
+                                        {matchedCustomer && (
+                                            <span className="material-icons-round" style={{
+                                                position: 'absolute',
+                                                right: '0.75rem',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: '#16a34a',
+                                                fontSize: '1.2rem',
+                                                pointerEvents: 'none'
+                                            }}>
+                                                verified
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                                        *Nama orang / reseller / koordinator yang memesan (kunci loyalitas &amp; repeat order)
+                                    </span>
+
+                                    {/* Dropdown Suggestions */}
+                                    {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            right: 0,
+                                            zIndex: 60,
+                                            marginTop: '0.35rem',
+                                            background: 'var(--bg-card, #ffffff)',
+                                            border: '1px solid var(--border-color, #e2e8f0)',
+                                            borderRadius: '10px',
+                                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                                            maxHeight: '260px',
+                                            overflowY: 'auto'
+                                        }}>
+                                            <div style={{
+                                                padding: '0.45rem 0.85rem',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                color: 'var(--text-muted, #64748b)',
+                                                background: 'rgba(99, 102, 241, 0.05)',
+                                                borderBottom: '1px solid var(--border-color, #e2e8f0)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between'
+                                            }}>
+                                                <span>Pilih Dari Pelanggan Terdaftar ({customerSuggestions.length})</span>
+                                                <span style={{ fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' }}>Klik untuk auto-fill kontak</span>
+                                            </div>
+                                            {customerSuggestions.map(c => (
+                                                 <div
+                                                     key={c.id || c.name}
+                                                     onClick={() => handleSelectCustomer(c)}
+                                                     style={{
+                                                         padding: '0.65rem 0.85rem',
+                                                         borderBottom: '1px solid var(--border-color, #f1f5f9)',
+                                                         cursor: 'pointer',
+                                                         display: 'flex',
+                                                         alignItems: 'center',
+                                                         justifyContent: 'space-between',
+                                                         gap: '0.75rem',
+                                                         transition: 'background 0.15s ease'
+                                                     }}
+                                                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)'}
+                                                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                 >
+                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                                                         <div style={{
+                                                             width: '32px',
+                                                             height: '32px',
+                                                             borderRadius: '50%',
+                                                             background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                                             color: '#ffffff',
+                                                             display: 'flex',
+                                                             alignItems: 'center',
+                                                             justifyContent: 'center',
+                                                             fontSize: '0.75rem',
+                                                             fontWeight: 800,
+                                                             flexShrink: 0
+                                                         }}>
+                                                             {getInitials(c.name)}
+                                                         </div>
+                                                         <div style={{ minWidth: 0 }}>
+                                                             <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                 {c.name}
+                                                             </div>
+                                                             <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                                                 {c.phone && <span>📞 {c.phone}</span>}
+                                                                 {c.company && <span>• 🏢 Tim: {c.company}</span>}
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                         <span style={{
+                                                             fontSize: '0.7rem',
+                                                             fontWeight: 600,
+                                                             background: '#eff6ff',
+                                                             color: '#2563eb',
+                                                             padding: '0.15rem 0.45rem',
+                                                             borderRadius: '4px'
+                                                         }}>
+                                                             {c.totalQty || 0} pcs ({c.orderCount || 0}x)
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Nama Tim / Perusahaan</label>
-                                    <input className="form-input" value={data.company} onChange={e => setData({ ...data, company: e.target.value })} placeholder="PT, CV, Sekolah, dll" />
+                                    <label className="form-label" style={{ fontWeight: 700 }}>
+                                        Nama Tim / Komunitas / Sekolah
+                                    </label>
+                                    <input
+                                        className="form-input"
+                                        value={data.company}
+                                        onChange={e => setData({ ...data, company: e.target.value })}
+                                        placeholder="Cth: SMAN 1 Bandung, Bhayangkara FC, Garuda FC"
+                                    />
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                                        *Identitas tim/instansi untuk desain &amp; produksi (bisa berbeda-beda di setiap order)
+                                    </span>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Produk (Judul Referensi)</label>

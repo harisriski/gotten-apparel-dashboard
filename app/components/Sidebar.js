@@ -14,6 +14,7 @@ export default function Sidebar({ activePage, onPageChange, isOpen, onClose }) {
             items: [
                 { page: 'overview', icon: 'dashboard', label: 'Ringkasan' },
                 { page: 'orders', icon: 'receipt_long', label: 'Pesanan' },
+                { page: 'customers', icon: 'groups', label: 'Pelanggan' },
             ]
         },
         {
@@ -27,7 +28,6 @@ export default function Sidebar({ activePage, onPageChange, isOpen, onClose }) {
             label: 'Keuangan',
             items: [
                 { page: 'finance', icon: 'account_balance_wallet', label: 'Arus Kas' },
-                { page: 'customers', icon: 'groups', label: 'Pelanggan' },
             ]
         },
         {

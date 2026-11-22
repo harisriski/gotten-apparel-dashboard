@@ -4,6 +4,54 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
     try {
         const db = getDb();
+
+        // ── Auto-Heal: Sinkronisasi otomatis jika ada pesanan aktif yang belum memiliki SPK ──
+        try {
+            const missingOrders = db.prepare(`
+                SELECT o.* FROM orders o
+                WHERE o.deleted_at IS NULL 
+                AND o.id NOT IN (SELECT order_id FROM work_orders WHERE deleted_at IS NULL)
+                ORDER BY o.id ASC
+            `).all();
+
+            if (missingOrders.length > 0) {
+                const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
+                for (const order of missingOrders) {
+                    const lastWo = db.prepare(`
+                        SELECT wo_number FROM work_orders 
+                        WHERE wo_number LIKE ? 
+                        ORDER BY id DESC LIMIT 1
+                    `).get(`WO-${dateStr}-%`);
+
+                    let nextSeq = 1;
+                    if (lastWo && lastWo.wo_number) {
+                        const parts = lastWo.wo_number.split('-');
+                        const num = parseInt(parts[parts.length - 1], 10);
+                        if (!isNaN(num)) nextSeq = num + 1;
+                    }
+
+                    let woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+                    while (db.prepare('SELECT id FROM work_orders WHERE wo_number = ?').get(woNumber)) {
+                        nextSeq++;
+                        woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+                    }
+
+                    db.prepare(`
+                        INSERT INTO work_orders (wo_number, order_id, customer, team_name, status, designs, notes)
+                        VALUES (?, ?, ?, ?, 'pending', '[]', ?)
+                    `).run(
+                        woNumber,
+                        order.id,
+                        order.customer || '',
+                        order.company || order.product || '',
+                        order.shipping_term ? `Ketentuan: ${order.shipping_term}` : ''
+                    );
+                }
+            }
+        } catch (syncErr) {
+            console.error('Work orders auto-sync error:', syncErr);
+        }
+
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('search');
         const orderId = searchParams.get('order_id');
@@ -131,13 +179,28 @@ export async function POST(request) {
             }
         }
 
-        // Generate WO Number if not provided, e.g., WO-202611-0001
+        // Generate WO Number if not provided, e.g., WO-202611-0001 (anti-bentrok)
         let woNumber = body.wo_number;
         if (!woNumber) {
-            const countRow = db.prepare('SELECT COUNT(*) as count FROM work_orders').get();
-            const seq = String((countRow ? countRow.count : 0) + 1).padStart(4, '0');
             const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
-            woNumber = `WO-${dateStr}-${seq}`;
+            const lastWo = db.prepare(`
+                SELECT wo_number FROM work_orders 
+                WHERE wo_number LIKE ? 
+                ORDER BY id DESC LIMIT 1
+            `).get(`WO-${dateStr}-%`);
+
+            let nextSeq = 1;
+            if (lastWo && lastWo.wo_number) {
+                const parts = lastWo.wo_number.split('-');
+                const num = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(num)) nextSeq = num + 1;
+            }
+
+            woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+            while (db.prepare('SELECT id FROM work_orders WHERE wo_number = ?').get(woNumber)) {
+                nextSeq++;
+                woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+            }
         }
 
         const designsJson = typeof body.designs === 'string' ? body.designs : JSON.stringify(body.designs || []);

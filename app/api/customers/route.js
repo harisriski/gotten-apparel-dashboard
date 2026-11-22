@@ -90,7 +90,7 @@ export async function GET(request) {
 
         const orderListStmt = db.prepare(`
             SELECT 
-                id, product, qty, price, status, 
+                id, product, company, qty, price, status, 
                 COALESCE(NULLIF(tanggal, ''), created_at) as tanggal, 
                 deadline, shipping_date
             FROM orders

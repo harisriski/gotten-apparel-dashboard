@@ -444,8 +444,8 @@ export default function CustomersPage({ onAdd, onEdit, onDetail }) {
                                     const ribbonBg = isGold
                                         ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
                                         : isSilver
-                                        ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
-                                        : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)';
+                                            ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
+                                            : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)';
                                     const titleBadge = isGold ? '🥇 JUARA 1' : isSilver ? '🥈 JUARA 2' : '🥉 JUARA 3';
                                     const rewardTag = isGold ? '👑 Calon Reward Utama' : isSilver ? '🎁 Calon Reward ke-2' : '🎖️ Calon Reward ke-3';
 
@@ -960,10 +960,25 @@ export default function CustomersPage({ onAdd, onEdit, onDetail }) {
                                             }}
                                         >
                                             <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                     <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                                                         {ord.id}
                                                     </span>
+                                                    {ord.company && (
+                                                        <span style={{
+                                                            fontSize: '0.72rem',
+                                                            fontWeight: 600,
+                                                            padding: '0.15rem 0.5rem',
+                                                            borderRadius: '4px',
+                                                            background: 'rgba(99, 102, 241, 0.1)',
+                                                            color: 'var(--accent-primary)',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.2rem'
+                                                        }}>
+                                                            🏢 {ord.company}
+                                                        </span>
+                                                    )}
                                                     <span style={{
                                                         fontSize: '0.7rem',
                                                         padding: '0.15rem 0.45rem',

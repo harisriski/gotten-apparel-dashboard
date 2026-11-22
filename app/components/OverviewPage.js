@@ -354,7 +354,7 @@ export default function OverviewPage({ onViewOrders, onOrderClick }) {
                         <span className="material-icons-round" style={{ color: '#3b82f6' }}>receipt_long</span>
                     </div>
                     <div className="kpi-content">
-                        <span className="kpi-label">Nilai Kontrak Pesanan</span>
+                        <span className="kpi-label">Total Omset</span>
                         <span className="kpi-value"><AnimatedValue target={data.kpi.totalRevenue} prefix="Rp " /></span>
                         <span className="kpi-change positive">
                             <span className="material-icons-round">receipt</span>{data.kpi.totalOrders} pesanan ({data.kpi.activeOrders} aktif)

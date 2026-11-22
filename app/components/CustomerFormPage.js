@@ -256,7 +256,12 @@ export default function CustomerFormPage({ editCustomer, detailCustomer, onSave,
                                                 {ord.id}
                                             </td>
                                             <td style={{ padding: '0.85rem 1rem' }}>
-                                                {ord.product || 'Jersey Custom'}
+                                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ord.product || 'Jersey Custom'}</div>
+                                                {ord.company && (
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', marginTop: '0.15rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                        🏢 Tim: {ord.company}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 600 }}>
                                                 {ord.qty} pcs

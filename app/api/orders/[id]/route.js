@@ -151,10 +151,11 @@ export async function DELETE(request, { params }) {
 
         const customerName = existing.customer ? existing.customer.trim() : '';
 
-        // Soft delete: tandai deleted_at pada transaksi, work order, dan pesanan
-        db.prepare("UPDATE transactions SET deleted_at = datetime('now') WHERE order_id = ?").run(id);
-        db.prepare("UPDATE work_orders SET deleted_at = datetime('now') WHERE order_id = ?").run(id);
-        db.prepare("UPDATE orders SET deleted_at = datetime('now') WHERE id = ?").run(id);
+        // Soft delete: tandai deleted_at dengan timestamp ISO standar (UTC) pada transaksi, work order, dan pesanan
+        const nowIso = new Date().toISOString();
+        db.prepare("UPDATE transactions SET deleted_at = ? WHERE order_id = ?").run(nowIso, id);
+        db.prepare("UPDATE work_orders SET deleted_at = ? WHERE order_id = ?").run(nowIso, id);
+        db.prepare("UPDATE orders SET deleted_at = ? WHERE id = ?").run(nowIso, id);
 
         // Auto-cleanup customer: jika pelanggan tidak memiliki pesanan aktif lain, hapus dari tabel customers
         if (customerName) {

@@ -50,7 +50,7 @@ export default function Hero() {
 
           <a href="#harga" className={styles.btnSecondary}>
             <span className="material-icons-round">sports_soccer</span>
-            <span>Lihat 4 Model & Harga</span>
+            <span>Lihat 5 Model & Harga</span>
           </a>
         </div>
       </div>

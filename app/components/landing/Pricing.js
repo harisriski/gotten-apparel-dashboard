@@ -12,14 +12,95 @@ export default function Pricing() {
             <span className="material-icons-round" style={{ fontSize: '16px' }}>
               sports_soccer
             </span>
-            <span>4 Pilihan Model Jersey Gotten</span>
+            <span>5 Pilihan Model Jersey Gotten</span>
           </div>
           <h2 className={styles.sectionTitle}>
             Pilih Model <span>Jersey Tim Anda</span>
           </h2>
           <p className={styles.sectionDesc}>
-            Tersedia 4 pilihan model jersey sesuai kebutuhan dan anggaran tim Anda. Semua sudah termasuk setelan baju + celana siap tanding, bahan dryfit premium, dan gratis desain.
+            Tersedia 5 pilihan model jersey sesuai kebutuhan dan anggaran tim Anda. Semua sudah termasuk setelan baju + celana siap tanding, bahan dryfit premium, dan gratis desain.
           </p>
+        </div>
+
+        {/* Banner E-Katalog Download Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          borderRadius: '16px',
+          padding: '1.25rem 1.75rem',
+          color: '#ffffff',
+          marginBottom: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.25)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 320px' }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.35)'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '28px', color: '#ffffff' }}>
+                picture_as_pdf
+              </span>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  color: '#fca5a5',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '4px',
+                  letterSpacing: '0.05em'
+                }}>
+                  Official Catalog 2026
+                </span>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>PDF</span>
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                E-Katalog Lengkap Jersey Gotten Indonesia
+              </h3>
+            </div>
+          </div>
+
+          <a
+            href="/E-KATALOG%20JERSEY%20GOTTEN-1.pdf"
+            download="E-KATALOG-JERSEY-GOTTEN-2025.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              padding: '0.75rem 1.4rem',
+              borderRadius: '10px',
+              background: '#ffffff',
+              color: '#0f172a',
+              fontWeight: 800,
+              fontSize: '0.9rem',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s ease',
+              flexShrink: 0
+            }}
+          >
+            <span className="material-icons-round" style={{ fontSize: '20px', color: '#ef4444' }}>
+              file_download
+            </span>
+            <span>Download E-Katalog (PDF)</span>
+          </a>
         </div>
 
         {/* 4 Models Showcase (tabs + split panel) */}

@@ -157,11 +157,26 @@ export async function POST(request) {
             );
         }
 
-        // Auto-create Work Order for every new order
-        const countRow = db.prepare('SELECT COUNT(*) as count FROM work_orders').get();
-        const seq = String((countRow ? countRow.count : 0) + 1).padStart(4, '0');
+        // Auto-create Work Order for every new order (dijamin unik & anti-bentrok)
         const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
-        const woNumber = `WO-${dateStr}-${seq}`;
+        const lastWo = db.prepare(`
+            SELECT wo_number FROM work_orders 
+            WHERE wo_number LIKE ? 
+            ORDER BY id DESC LIMIT 1
+        `).get(`WO-${dateStr}-%`);
+
+        let nextSeq = 1;
+        if (lastWo && lastWo.wo_number) {
+            const parts = lastWo.wo_number.split('-');
+            const num = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(num)) nextSeq = num + 1;
+        }
+
+        let woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+        while (db.prepare('SELECT id FROM work_orders WHERE wo_number = ?').get(woNumber)) {
+            nextSeq++;
+            woNumber = `WO-${dateStr}-${String(nextSeq).padStart(4, '0')}`;
+        }
 
         db.prepare(`
             INSERT INTO work_orders (wo_number, order_id, customer, team_name, status, designs, notes)

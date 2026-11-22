@@ -10,7 +10,12 @@ function formatCurrency(num) {
 function formatIndoDateTime(dateStr) {
     if (!dateStr) return '-';
     try {
-        const d = new Date(dateStr);
+        // Konversi string SQLite UTC (misal: "2026-11-22 16:47:26") ke objek Date UTC agar dikonversi presisi ke WIB
+        let parsedStr = dateStr;
+        if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+            parsedStr = dateStr.replace(' ', 'T') + 'Z';
+        }
+        const d = new Date(parsedStr);
         if (isNaN(d.getTime())) return dateStr;
         return d.toLocaleDateString('id-ID', {
             day: 'numeric',
@@ -18,7 +23,7 @@ function formatIndoDateTime(dateStr) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        });
+        }) + ' WIB';
     } catch {
         return dateStr;
     }

@@ -48,6 +48,28 @@ export default function Navbar() {
           </nav>
 
           <div className={styles.navActions}>
+            <a
+              href="/E-KATALOG%20JERSEY%20GOTTEN-1.pdf"
+              download="E-KATALOG-JERSEY-GOTTEN-2025.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.btnNavStaff}
+              style={{
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                color: '#dc2626',
+                background: 'rgba(239, 68, 68, 0.06)',
+                cursor: 'pointer',
+                fontWeight: 700,
+                textDecoration: 'none'
+              }}
+              title="Unduh E-Katalog Resmi Gotten Indonesia (PDF)"
+            >
+              <span className="material-icons-round" style={{ fontSize: '18px', color: '#dc2626' }}>
+                picture_as_pdf
+              </span>
+              <span>E-Katalog</span>
+            </a>
+
             <button
               type="button"
               onClick={() => setShowTracker(true)}
