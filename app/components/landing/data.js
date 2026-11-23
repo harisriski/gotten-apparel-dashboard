@@ -79,7 +79,7 @@ export const JERSEY_MODELS = [
         priceFormatted: '100.000',
         unit: '/ 1 Stel',
         tagline: 'Setelan atas bawah atasan kain non-print warna dengan kombinasi elegan.',
-        image: '/landing/gotten/fix/Landing Page/CLASSICAL ONE.png',
+        image: '/landing/gotten/fix/Landing Page/Package Option/CLASSICAL ONE.png',
         highlights: [
             'Setelan Atas Bawah',
             'Bahan Dryfit Grade A (Milano Grade A / Micro)',
@@ -108,7 +108,7 @@ export const JERSEY_MODELS = [
         priceFormatted: '120.000',
         unit: '/ 1 Stel',
         tagline: 'Badan depan full print bebas motif dengan kombinasi badan belakang kain warna.',
-        image: '/landing/gotten/fix/Landing Page/HALF PRINT.png',
+        image: '/landing/gotten/fix/Landing Page/Package Option/HALF PRINT.png',
         highlights: [
             'Setelan Atas Bawah',
             'Bahan Dryfit Grade A (Milano Grade A / Micro)',
@@ -142,7 +142,7 @@ export const JERSEY_MODELS = [
         priceFormatted: '140.000',
         unit: '/ 1 Stel',
         tagline: 'Atasan full print depan belakang bebas motif dan warna. Pilihan nomor satu turnamen & tim.',
-        image: '/landing/gotten/fix/Landing Page/FULL PRINT ATASAN.png',
+        image: '/landing/gotten/fix/Landing Page/Package Option/FULL PRINT ATASAN.png',
         highlights: [
             'Setelan Atas Bawah',
             'Bahan Dryfit Grade A (Milano Grade A / Micro)',
@@ -172,7 +172,7 @@ export const JERSEY_MODELS = [
         priceFormatted: '170.000',
         unit: '/ 1 Stel',
         tagline: 'Atasan dan celana full printing menyeluruh dengan motif menyatu sempurna.',
-        image: '/landing/gotten/fix/Landing Page/FULL PRINT ATAS BAWAH.png',
+        image: '/landing/gotten/fix/Landing Page/Package Option/FULL PRINT ATAS BAWAH.png',
         highlights: [
             'Setelan Atas Bawah',
             'Bahan Dryfit Grade A (Milano Grade A / Micro)',
@@ -205,7 +205,7 @@ export const JERSEY_MODELS = [
         priceFormatted: '200.000',
         unit: '/ 1 Stel',
         tagline: 'Bahan Dryfit Jacquard timbul mewah, Logo 3D (Rubber/Tatami/Woven), dan Kardus Eksklusif.',
-        image: '/landing/gotten/fix/Landing Page/PREMIUM PACKAGE.png',
+        image: '/landing/gotten/fix/Landing Page/Package Option/PREMIUM PACKAGE.png',
         highlights: [
             'Setelan Atas Bawah',
             'Bahan Dryfit Jacquard Premium (Timbul)',

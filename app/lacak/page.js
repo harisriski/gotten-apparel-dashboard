@@ -39,7 +39,7 @@ function LacakContent() {
                     margin: '0 0 0.5rem 0',
                     letterSpacing: '-0.02em'
                 }}>
-                    Pantau Progres Pesanan Jersey Tim Anda
+                    Pantau Progres Pesanan Anda
                 </h1>
                 <p style={{
                     fontSize: '0.95rem',
@@ -48,7 +48,7 @@ function LacakContent() {
                     margin: '0 auto',
                     lineHeight: 1.6
                 }}>
-                    Transparansi penuh mulai dari antrean bahan, cutting, printing, jahit hingga jersey selesai dipacking dan dikirim ke lokasi Anda.
+                    Transparansi penuh mulai dari antrean bahan, cutting, printing, jahit hingga pesanan selesai dipacking dan dikirim ke lokasi Anda.
                 </p>
             </div>
 

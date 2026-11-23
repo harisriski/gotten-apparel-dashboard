@@ -95,7 +95,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
         {
             stepNumber: 2,
             title: 'Sedang Dikerjakan',
-            desc: 'Jersey tim Anda sedang dalam proses produksi aktif sesuai timeline kerja.',
+            desc: 'Pesanan Anda sedang dalam proses produksi aktif sesuai timeline kerja.',
             icon: 'precision_manufacturing',
             state: isProses ? 'active' : (isSelesai || isDikirim ? 'completed' : 'pending'),
             badgeLabel: isProses ? 'Sedang Dikerjakan' : (isSelesai || isDikirim ? 'Selesai' : 'Menunggu'),
@@ -483,7 +483,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                         </div>
                     </div>
 
-                    {/* 2. Mockup Desain Jersey (Mockup Tim) */}
+                    {/* 2. Mockup Desain (Mockup Tim) */}
                     <div style={{
                         background: '#ffffff',
                         borderRadius: '16px',
@@ -511,7 +511,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                 <span className="material-icons-round" style={{ color: '#059669', fontSize: '1.35rem' }}>
                                     palette
                                 </span>
-                                Desain Jersey (Mockup Tim)
+                                Desain ACC (Mockup Desain)
                             </h3>
                             <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                                 {orderData.designs && orderData.designs.length > 0
@@ -557,7 +557,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                                 {imgSrc ? (
                                                     <img
                                                         src={imgSrc}
-                                                        alt={design.label || 'Mockup Jersey'}
+                                                        alt={design.label || 'Mockup Desain'}
                                                         style={{
                                                             maxWidth: '100%',
                                                             maxHeight: '100%',
@@ -620,7 +620,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                     Mockup Desain Sedang Difinalisasi
                                 </h4>
                                 <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-                                    Desain jersey tim Anda sedang dirapikan oleh tim desainer Gotten Apparel. Mockup visual akan otomatis muncul di sini setelah di-ACC.
+                                    Desain pesanan Anda sedang dirapikan oleh tim desainer Gotten Apparel. Mockup visual akan otomatis muncul di sini setelah di-ACC.
                                 </p>
                             </div>
                         )}
@@ -650,7 +650,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                                 Tahapan Utama Pengerjaan
                             </h3>
                             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                                Urutan fase dari antrean pemesanan hingga pengiriman jersey ke tangan Anda.
+                                Urutan fase dari antrean pemesanan hingga pesanan dikirim ke tangan Anda.
                             </p>
                         </div>
 
@@ -970,7 +970,7 @@ export default function OrderTracker({ initialOrderId = '', inModal = false, onC
                             background: '#f8fafc'
                         }}>
                             <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a' }}>
-                                {previewImage.title || 'Mockup Jersey'}
+                                {previewImage.title || 'Mockup Desain'}
                             </span>
                             <button
                                 type="button"
