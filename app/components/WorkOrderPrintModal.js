@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from 'react';
    - Jika isi kebanyakan  → seluruh SPK di-zoom kecil sampai pas.
    - Jika isi ada sisa    → sisa ruang dipakai memperbesar gambar
                             Desain ACC (kolom grid dipilih otomatis).
-   - Kolom tanda tangan selalu menempel di dasar kertas.
    ───────────────────────────────────────────────────────────── */
 const FIT_SCRIPT = `
 (function () {
@@ -100,7 +99,6 @@ function buildPrintHtml(innerHTML, title) {
     img { max-width: 100%; }
     .spk-page { width: 200mm; height: 286mm; overflow: hidden; }
     .spk-content { display: flex; flex-direction: column; min-height: 100%; }
-    [data-spk="signature"] { margin-top: auto !important; }
 </style>
 </head>
 <body>
@@ -648,20 +646,6 @@ export default function WorkOrderPrintModal({ workOrder, onClose }) {
                                 </table>
                             )}
                         </div>
-                    </div>
-                </div>
-
-                {/* ── TANDA TANGAN (selalu di dasar kertas) ── */}
-                <div data-spk="signature" style={{ borderTop: '2px solid #0f172a', paddingTop: '0.35rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', textAlign: 'center', fontSize: '0.7rem' }}>
-                        {['Admin / Sales', 'Cutting (Potong)', 'Printing / Sablon', 'Jahit (Sewing)', 'QC & Packing'].map((role) => (
-                            <div key={role}>
-                                <span style={{ color: '#64748b', display: 'block', marginBottom: '1.8rem', fontSize: '0.68rem' }}>{role}</span>
-                                <div style={{ borderTop: '1px solid #334155', paddingTop: '0.2rem', fontWeight: 600 }}>
-                                    ( ......................... )
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </div>
